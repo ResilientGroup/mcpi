@@ -1,9 +1,9 @@
+import os
+import math
+
 from .connection import Connection
 from .vec3 import Vec3
 from .event import BlockEvent, ChatEvent, ProjectileEvent
-from .entity import Entity
-from .block import Block
-import math
 from .util import flatten
 
 """ Minecraft PI low level api v0.1_1
@@ -26,11 +26,7 @@ from .util import flatten
 - getPlayerEntityId()
 - pollChatPosts()
 - setSign()
-- spawnEntity()
-- getEntities()
-- removeEntity()
-- removeEntityType()
-"""
+- spawnEntity()"""
 
 def intFloor(*args):
     return [int(math.floor(x)) for x in flatten(args)]
@@ -99,49 +95,38 @@ class CmdEntity(CmdPositioner):
         Also can be used to find name of entity if entity is not a player."""
         return self.conn.sendReceive(b"entity.getName", id)
 
-    def getEntities(self, id, distance=10, typeId=-1):
-        """Return a list of entities near entity (playerEntityId:int, distanceFromPlayerInBlocks:int, typeId:int) => [[entityId:int,entityTypeId:int,entityTypeName:str,posX:float,posY:float,posZ:float]]"""
-        """If distanceFromPlayerInBlocks:int is not specified then default 10 blocks will be used"""
-        s = self.conn.sendReceive(b"entity.getEntities", id, distance, typeId)
-        entities = [e for e in s.split("|") if e]
-        return [ [int(n.split(",")[0]), int(n.split(",")[1]), n.split(",")[2], float(n.split(",")[3]), float(n.split(",")[4]), float(n.split(",")[5])] for n in entities]
+    def remove(self, id):
+        self.conn.send(b"entity.remove", id)
 
-    def removeEntities(self, id, distance=10, typeId=-1):
-        """Remove entities all entities near entity (playerEntityId:int, distanceFromPlayerInBlocks:int, typeId:int, ) => (removedEntitiesCount:int)"""
-        """If distanceFromPlayerInBlocks:int is not specified then default 10 blocks will be used"""
-        return int(self.conn.sendReceive(b"entity.removeEntities", id, distance, typeId))
 
-    def pollBlockHits(self, *args):
-        """Only triggered by sword => [BlockEvent]"""
-        s = self.conn.sendReceive(b"entity.events.block.hits", intFloor(args))
-        events = [e for e in s.split("|") if e]
-        return [BlockEvent.Hit(*list(map(int, e.split(",")))) for e in events]
+class Entity:
+    def __init__(self, conn, entity_uuid, typeName):
+        self.p = CmdPositioner(conn, b"entity")
+        self.id = entity_uuid
+        self.type = typeName
+    def getPos(self):
+        return self.p.getPos(self.id)
+    def setPos(self, *args):
+        return self.p.setPos(self.id, args)
+    def getTilePos(self):
+        return self.p.getTilePos(self.id)
+    def setTilePos(self, *args):
+        return self.p.setTilePos(self.id, args)
+    def setDirection(self, *args):
+        return self.p.setDirection(self.id, args)
+    def getDirection(self):
+        return self.p.getDirection(self.id)
+    def setRotation(self, yaw):
+        return self.p.setRotation(self.id, yaw)
+    def getRotation(self):
+        return self.p.getRotation(self.id)
+    def setPitch(self, pitch):
+        return self.p.setPitch(self.id, pitch)
+    def getPitch(self):
+        return self.p.getPitch(self.id)
+    def remove(self):
+        self.p.conn.send(b"entity.remove", self.id)
 
-    def pollChatPosts(self, *args):
-        """Triggered by posts to chat => [ChatEvent]"""
-        s = self.conn.sendReceive(b"entity.events.chat.posts", intFloor(args))
-        events = [e for e in s.split("|") if e]
-        return [ChatEvent.Post(int(e[:e.find(",")]), e[e.find(",") + 1:]) for e in events]
-    
-    def pollProjectileHits(self, *args):
-        """Only triggered by projectiles => [BlockEvent]"""
-        s = self.conn.sendReceive(b"entity.events.projectile.hits", intFloor(args))
-        events = [e for e in s.split("|") if e]
-        results = []
-        for e in events:
-            info = e.split(",")
-            results.append(ProjectileEvent.Hit(
-                int(info[0]), 
-                int(info[1]), 
-                int(info[2]), 
-                int(info[3]), 
-                info[4],
-                info[5]))
-        return results
-
-    def clearEvents(self, *args):
-        """Clear the entities events"""
-        self.conn.send(b"entity.events.clear", intFloor(args))
 
 class CmdPlayer(CmdPositioner):
     """Methods for the host (Raspberry Pi) player"""
@@ -169,50 +154,6 @@ class CmdPlayer(CmdPositioner):
         return CmdPositioner.setPitch(self, [], pitch)
     def getPitch(self):
         return CmdPositioner.getPitch(self, [])
-
-    def getEntities(self, distance=10, typeId=-1):
-        """Return a list of entities near entity (distanceFromPlayerInBlocks:int, typeId:int) => [[entityId:int,entityTypeId:int,entityTypeName:str,posX:float,posY:float,posZ:float]]"""
-        """If distanceFromPlayerInBlocks:int is not specified then default 10 blocks will be used"""
-        s = self.conn.sendReceive(b"player.getEntities", distance, typeId)
-        entities = [e for e in s.split("|") if e]
-        return [ [int(n.split(",")[0]), int(n.split(",")[1]), n.split(",")[2], float(n.split(",")[3]), float(n.split(",")[4]), float(n.split(",")[5])] for n in entities]
-
-    def removeEntities(self, distance=10, typeId=-1):
-        """Remove entities all entities near entity (distanceFromPlayerInBlocks:int, typeId:int, ) => (removedEntitiesCount:int)"""
-        """If distanceFromPlayerInBlocks:int is not specified then default 10 blocks will be used"""
-        return int(self.conn.sendReceive(b"player.removeEntities", distance, typeId))
-
-    def pollBlockHits(self):
-        """Only triggered by sword => [BlockEvent]"""
-        s = self.conn.sendReceive(b"player.events.block.hits")
-        events = [e for e in s.split("|") if e]
-        return [BlockEvent.Hit(*list(map(int, e.split(",")))) for e in events]
-
-    def pollChatPosts(self):
-        """Triggered by posts to chat => [ChatEvent]"""
-        s = self.conn.sendReceive(b"player.events.chat.posts")
-        events = [e for e in s.split("|") if e]
-        return [ChatEvent.Post(int(e[:e.find(",")]), e[e.find(",") + 1:]) for e in events]
-    
-    def pollProjectileHits(self):
-        """Only triggered by projectiles => [BlockEvent]"""
-        s = self.conn.sendReceive(b"player.events.projectile.hits")
-        events = [e for e in s.split("|") if e]
-        results = []
-        for e in events:
-            info = e.split(",")
-            results.append(ProjectileEvent.Hit(
-                int(info[0]), 
-                int(info[1]), 
-                int(info[2]), 
-                int(info[3]), 
-                info[4],
-                info[5]))
-        return results
-
-    def clearEvents(self):
-        """Clear the players events"""
-        self.conn.send(b"player.events.clear")
 
 class CmdCamera:
     def __init__(self, connection):
@@ -248,29 +189,20 @@ class CmdEvents:
         """Only triggered by sword => [BlockEvent]"""
         s = self.conn.sendReceive(b"events.block.hits")
         events = [e for e in s.split("|") if e]
-        return [BlockEvent.Hit(*list(map(int, e.split(",")))) for e in events]
+        return [BlockEvent.Hit(*e.split(",")) for e in events]
 
     def pollChatPosts(self):
         """Triggered by posts to chat => [ChatEvent]"""
         s = self.conn.sendReceive(b"events.chat.posts")
         events = [e for e in s.split("|") if e]
         return [ChatEvent.Post(int(e[:e.find(",")]), e[e.find(",") + 1:]) for e in events]
-    
+
     def pollProjectileHits(self):
         """Only triggered by projectiles => [BlockEvent]"""
         s = self.conn.sendReceive(b"events.projectile.hits")
         events = [e for e in s.split("|") if e]
-        results = []
-        for e in events:
-            info = e.split(",")
-            results.append(ProjectileEvent.Hit(
-                int(info[0]), 
-                int(info[1]), 
-                int(info[2]), 
-                int(info[3]), 
-                info[4],
-                info[5]))
-        return results
+        return [ProjectileEvent.Hit(*e.split(",")) for e in events]
+
 
 class Minecraft:
     """The main class to interact with a running instance of Minecraft Pi."""
@@ -284,43 +216,51 @@ class Minecraft:
 
     def getBlock(self, *args):
         """Get block (x,y,z) => id:int"""
-        return int(self.conn.sendReceive(b"world.getBlock", intFloor(args)))
+        return self.conn.sendReceive(b"world.getBlock", intFloor(args))
 
     def getBlockWithData(self, *args):
         """Get block with data (x,y,z) => Block"""
-        ans = self.conn.sendReceive(b"world.getBlockWithData", intFloor(args))
-        return Block(*list(map(int, ans.split(","))))
+        return self.conn.sendReceive(b"world.getBlockWithData", intFloor(args)).split(",")
 
     def getBlocks(self, *args):
         """Get a cuboid of blocks (x0,y0,z0,x1,y1,z1) => [id:int]"""
-        s = self.conn.sendReceive(b"world.getBlocks", intFloor(args))
-        return map(int, s.split(","))
+        # s = self.conn.sendReceive(b"world.getBlocks", intFloor(args))
+        s = self.conn.sendReceive(b"world.getBlocks", *args)
+        return s.split(",")
 
     def setBlock(self, *args):
         """Set block (x,y,z,id,[data])"""
-        self.conn.send(b"world.setBlock", intFloor(args))
+        self.conn.send(b"world.setBlock", *args)
 
     def setBlocks(self, *args):
         """Set a cuboid of blocks (x0,y0,z0,x1,y1,z1,id,[data])"""
-        self.conn.send(b"world.setBlocks", intFloor(args))
+        self.conn.send(b"world.setBlocks", *args)
 
     def setSign(self, *args):
-        """Set a sign (x,y,z,id,data,[line1,line2,line3,line4])
-        
-        Wall signs (id=68) require data for facing direction 2=north, 3=south, 4=west, 5=east
-        Standing signs (id=63) require data for facing rotation (0-15) 0=south, 4=west, 8=north, 12=east
-        @author: Tim Cummings https://www.triptera.com.au/wordpress/"""
-        lines = []
-        flatargs = []
-        for arg in flatten(args):
-            flatargs.append(arg)
-        for flatarg in flatargs[5:]:
-            lines.append(flatarg.replace(",",";").replace(")","]").replace("(","["))
-        self.conn.send(b"world.setSign",intFloor(flatargs[0:5]) + lines)
+        """Set a sign (x,y,z,sign_type,direction,line1,line2,line3,line4)
+        direction: 0-north, 1-east, 2-south 3-west
+        """
+        self.conn.send(b"world.setSign", args)
 
     def spawnEntity(self, *args):
-        """Spawn entity (x,y,z,id)"""
-        return int(self.conn.sendReceive(b"world.spawnEntity", args))
+        """Spawn entity (x,y,z,id,[data])"""
+        return Entity(self.conn, self.conn.sendReceive(b"world.spawnEntity", *args), args[3])
+
+    def spawnParticle(self, *args):
+        """Spawn entity (x,y,z,id,[data])"""
+        return self.conn.send(b"world.spawnParticle", *args)
+
+    def getNearbyEntities(self, *args):
+        """get nearby entities (x,y,z)"""
+        entities = []
+        for i in self.conn.sendReceive(b"world.getNearbyEntities", *args).split(","):
+            name, eid = i.split(":")
+            entities.append(Entity(self.conn, eid, name))
+        return entities
+
+    def removeEntity(self, *args):
+        """Spawn entity (x,y,z,id,[data])"""
+        return self.conn.sendReceive(b"world.removeEntity", *args)
 
     def getHeight(self, *args):
         """Get the height of the world (x,z) => int"""
@@ -329,11 +269,11 @@ class Minecraft:
     def getPlayerEntityIds(self):
         """Get the entity ids of the connected players => [id:int]"""
         ids = self.conn.sendReceive(b"world.getPlayerIds")
-        return list(map(int, ids.split("|")))
+        return ids.split("|")
 
     def getPlayerEntityId(self, name):
         """Get the entity id of the named player => [id:int]"""
-        return int(self.conn.sendReceive(b"world.getPlayerId", name))
+        return self.conn.sendReceive(b"world.getPlayerId", name)
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
@@ -351,29 +291,28 @@ class Minecraft:
         """Set a world setting (setting, status). keys: world_immutable, nametags_visible"""
         self.conn.send(b"world.setting", setting, 1 if bool(status) else 0)
 
-    def getEntityTypes(self):
-        """Return a list of Entity objects representing all the entity types in Minecraft"""  
-        s = self.conn.sendReceive(b"world.getEntityTypes")
-        types = [t for t in s.split("|") if t]
-        return [Entity(int(e[:e.find(",")]), e[e.find(",") + 1:]) for e in types]
-    
-    def getEntities(self, typeId=-1):
-        """Return a list of all currently loaded entities (EntityType:int) => [[entityId:int,entityTypeId:int,entityTypeName:str,posX:float,posY:float,posZ:float]]"""
-        s = self.conn.sendReceive(b"world.getEntities", typeId)
-        entities = [e for e in s.split("|") if e]
-        return [[int(n.split(",")[0]), int(n.split(",")[1]), n.split(",")[2], float(n.split(",")[3]), float(n.split(",")[4]), float(n.split(",")[5])] for n in entities]
-
-    def removeEntity(self, id):
-        """Remove entity by id (entityId:int) => (removedEntitiesCount:int)"""
-        return int(self.conn.sendReceive(b"world.removeEntity", int(id)))
-
-    def removeEntities(self, typeId=-1):
-        """Remove entities all currently loaded Entities by type (typeId:int) => (removedEntitiesCount:int)"""
-        return int(self.conn.sendReceive(b"world.removeEntities", typeId))
+    def setPlayer(self, name):
+        return self.conn.sendReceive(b"setPlayer", name)
 
     @staticmethod
-    def create(address = "localhost", port = 4711):
-        return Minecraft(Connection(address, port))
+    def create(address="localhost", port=4711, debug=False):
+        if "JRP_API_HOST" in os.environ:
+            address = os.environ["JRP_API_HOST"]
+        if "JRP_API_PORT" in os.environ:
+            try:
+                port = int(os.environ["JRP_API_PORT"])
+            except ValueError:
+                pass
+        return Minecraft(Connection(address, port, debug))
+
+
+def mcpy(func):
+    # these will be created as global variable in module, so not good idea
+    # func.__globals__['mc'] = Minecraft.create()
+    # func.__globals__['pos'] = func.__globals__['mc'].player.getTilePos()
+    # func.__globals__['direction'] = func.__globals__['mc'].player.getDirection()
+    func.__doc__ = ("_mcpy :" + func.__doc__) if func.__doc__ else "_mcpy "
+    return func
 
 
 if __name__ == "__main__":
