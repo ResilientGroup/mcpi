@@ -274,7 +274,7 @@ class Minecraft:
         return ids.split("|")
 
     def getPlayerEntityId(self, name):
-        """Get the entity id of the named player => [id:int]"""
+        """Get the entity id of the named player => id"""
         return self.conn.sendReceive(b"world.getPlayerId", name)
 
     def saveCheckpoint(self):
