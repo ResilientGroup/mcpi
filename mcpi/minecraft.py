@@ -278,9 +278,9 @@ class Minecraft:
         return self.conn.sendReceive(b"world.getPlayerId", name)
 
     def getPlayerNames(self):
-        """Get the names of all currently connected players => [str]"""
+        """Get the names of all currently connected players (or an empty List) => [str]"""
         ids = self.conn.sendReceive(b"world.getPlayerIds")
-        return [tuple.split(":")[0] for tuple in ids.split("|")]
+        return [] if not ids else [tuple.split(":")[0] for tuple in ids.split("|")]
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
