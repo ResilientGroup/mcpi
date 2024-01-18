@@ -299,7 +299,13 @@ class Minecraft:
         self.conn.send(b"world.setting", setting, 1 if bool(status) else 0)
 
     def setPlayer(self, name):
+        """Set the current player"""
         return self.conn.sendReceive(b"setPlayer", name)
+
+    def getPlayerName(self):
+        """Get the name of the current player => str"""
+        playerName = self.conn.sendReceive(b"getPlayer")
+        return None if playerName == "(none)" else playerName
 
     @staticmethod
     def create(address="localhost", port=4711, playerName=[], debug=False):
