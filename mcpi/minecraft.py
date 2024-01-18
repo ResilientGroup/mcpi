@@ -277,6 +277,11 @@ class Minecraft:
         """Get the entity id of the named player => id"""
         return self.conn.sendReceive(b"world.getPlayerId", name)
 
+    def getPlayerNames(self):
+        """Get the names of all currently connected players => [str]"""
+        ids = self.conn.sendReceive(b"world.getPlayerIds")
+        return [tuple.split(":")[0] for tuple in ids.split("|")]
+
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
         self.conn.send(b"world.checkpoint.save")
