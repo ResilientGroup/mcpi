@@ -130,30 +130,31 @@ class Entity:
 
 class CmdPlayer(CmdPositioner):
     """Methods for the host (Raspberry Pi) player"""
-    def __init__(self, connection):
-        CmdPositioner.__init__(self, connection, b"player")
+    def __init__(self, connection, playerId):
+        CmdPositioner.__init__(self, connection,  b"player")
         self.conn = connection
+        self.playerId = playerId
 
     def getPos(self):
-        return CmdPositioner.getPos(self, [])
+        return CmdPositioner.getPos(self, self.playerId)
     def setPos(self, *args):
-        return CmdPositioner.setPos(self, [], args)
+        return CmdPositioner.setPos(self, self.playerId, args)
     def getTilePos(self):
-        return CmdPositioner.getTilePos(self, [])
+        return CmdPositioner.getTilePos(self, self.playerId)
     def setTilePos(self, *args):
-        return CmdPositioner.setTilePos(self, [], args)
+        return CmdPositioner.setTilePos(self, self.playerId, args)
     def setDirection(self, *args):
-        return CmdPositioner.setDirection(self, [], args)
+        return CmdPositioner.setDirection(self, self.playerId, args)
     def getDirection(self):
-        return CmdPositioner.getDirection(self, [])
+        return CmdPositioner.getDirection(self, self.playerId)
     def setRotation(self, yaw):
-        return CmdPositioner.setRotation(self, [], yaw)
+        return CmdPositioner.setRotation(self,self.playerId, yaw)
     def getRotation(self):
-        return CmdPositioner.getRotation(self, [])
+        return CmdPositioner.getRotation(self, self.playerId)
     def setPitch(self, pitch):
-        return CmdPositioner.setPitch(self, [], pitch)
+        return CmdPositioner.setPitch(self, self.playerId, pitch)
     def getPitch(self):
-        return CmdPositioner.getPitch(self, [])
+        return CmdPositioner.getPitch(self, self.playerId)
 
 class CmdCamera:
     def __init__(self, connection):
@@ -206,13 +207,14 @@ class CmdEvents:
 
 class Minecraft:
     """The main class to interact with a running instance of Minecraft Pi."""
-    def __init__(self, connection):
+    def __init__(self, connection, playerId):
         self.conn = connection
 
         self.camera = CmdCamera(connection)
         self.entity = CmdEntity(connection)
-        self.player = CmdPlayer(connection)
+        self.player = CmdPlayer(connection, playerId)
         self.events = CmdEvents(connection)
+        self.playerId = playerId
 
     def getBlock(self, *args):
         """Get block (x,y,z) => id:int"""
@@ -295,7 +297,7 @@ class Minecraft:
         return self.conn.sendReceive(b"setPlayer", name)
 
     @staticmethod
-    def create(address="localhost", port=4711, debug=False):
+    def create(address="localhost", port=4711, playerName="", debug=False):
         if "JRP_API_HOST" in os.environ:
             address = os.environ["JRP_API_HOST"]
         if "JRP_API_PORT" in os.environ:
@@ -303,7 +305,13 @@ class Minecraft:
                 port = int(os.environ["JRP_API_PORT"])
             except ValueError:
                 pass
-        return Minecraft(Connection(address, port, debug))
+
+        conn = Connection(address, port, debug)
+        if playerName != "":
+            playerId = conn.sendReceive(b"world.getPlayerId", playerName)
+            print("get {} playerid={}".format(playerName, playerId))
+
+        return Minecraft(conn, playerName)
 
 
 def mcpy(func):
