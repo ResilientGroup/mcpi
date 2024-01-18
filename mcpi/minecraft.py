@@ -214,7 +214,7 @@ class Minecraft:
         self.entity = CmdEntity(connection)
         self.player = CmdPlayer(connection, playerName)
         self.events = CmdEvents(connection)
-        self.playerName = playerName
+        self._playerName = playerName
 
     def getBlock(self, *args):
         """Get block (x,y,z) => id:int"""
@@ -301,18 +301,20 @@ class Minecraft:
     def setPlayer(self, name):
         """Set the current player => bool"""
         if self.conn.sendReceive(b"setPlayer", name):
-            self.playerName = name
+            self._playerName = name
             return True
         else:
             return False
 
     def getPlayerName(self):
         """Get the name of the previously set / currently attached player => str"""
-        if self.playerName:
-            return self.playerName
+        if self._playerName:
+            return self._playerName
         else:
-            playerName = self.conn.sendReceive(b"getPlayer")
-            return None if playerName == "(none)" else playerName
+            p = self.conn.sendReceive(b"getPlayer")
+            return None if p == "(none)" else p
+
+    playerName = property(getPlayerName)
 
     @staticmethod
     def create(address="localhost", port=4711, playerName=[], debug=False):
