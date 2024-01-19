@@ -39,8 +39,7 @@ class CmdPositioner:
 
     def getPos(self, id):
         """Get entity position (entityId:int) => Vec3"""
-        s = self.conn.sendReceive(self.pkg + b".getPos", id)
-        return Vec3(*list(map(float, s.split(","))))
+        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getPos", id))
 
     def setPos(self, id, *args):
         """Set entity position (entityId:int, x,y,z)"""
@@ -48,8 +47,7 @@ class CmdPositioner:
 
     def getTilePos(self, id):
         """Get entity tile position (entityId:int) => Vec3"""
-        s = self.conn.sendReceive(self.pkg + b".getTile", id)
-        return Vec3(*list(map(int, s.split(","))))
+        return self._parseVec3(int, self.conn.sendReceive(self.pkg + b".getTile", id))
 
     def setTilePos(self, id, *args):
         """Set entity tile position (entityId:int) => Vec3"""
@@ -61,8 +59,7 @@ class CmdPositioner:
 
     def getDirection(self, id):
         """Get entity direction (entityId:int) => Vec3"""
-        s = self.conn.sendReceive(self.pkg + b".getDirection", id)
-        return Vec3(*map(float, s.split(",")))
+        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getDirection", id))
 
     def setRotation(self, id, yaw):
         """Set entity rotation (entityId:int, yaw)"""
@@ -70,7 +67,7 @@ class CmdPositioner:
 
     def getRotation(self, id):
         """get entity rotation (entityId:int) => float"""
-        return float(self.conn.sendReceive(self.pkg + b".getRotation", id))
+        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getRotation", id))
 
     def setPitch(self, id, pitch):
         """Set entity pitch (entityId:int, pitch)"""
@@ -78,11 +75,25 @@ class CmdPositioner:
 
     def getPitch(self, id):
         """get entity pitch (entityId:int) => float"""
-        return float(self.conn.sendReceive(self.pkg + b".getPitch", id))
+        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getPitch", id))
 
     def setting(self, setting, status):
         """Set a player setting (setting, status). keys: autojump"""
         self.conn.send(self.pkg + b".setting", setting, 1 if bool(status) else 0)
+
+    @staticmethod
+    def _parseScalar(converter, string):
+        try:
+            return converter(string)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _parseVec3(converter, string):
+        try:
+            return Vec3(*list(map(converter, string.split(","))))
+        except ValueError:
+            return None
 
 class CmdEntity(CmdPositioner):
     """Methods for entities"""
