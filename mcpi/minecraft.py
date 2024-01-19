@@ -39,8 +39,7 @@ class CmdPositioner:
 
     def getPos(self, id):
         """Get entity position (entityId:int) => Vec3"""
-        s = self.conn.sendReceive(self.pkg + b".getPos", id)
-        return Vec3(*list(map(float, s.split(","))))
+        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getPos", id))
 
     def setPos(self, id, *args):
         """Set entity position (entityId:int, x,y,z)"""
@@ -48,8 +47,7 @@ class CmdPositioner:
 
     def getTilePos(self, id):
         """Get entity tile position (entityId:int) => Vec3"""
-        s = self.conn.sendReceive(self.pkg + b".getTile", id)
-        return Vec3(*list(map(int, s.split(","))))
+        return self._parseVec3(int, self.conn.sendReceive(self.pkg + b".getTile", id))
 
     def setTilePos(self, id, *args):
         """Set entity tile position (entityId:int) => Vec3"""
@@ -61,8 +59,7 @@ class CmdPositioner:
 
     def getDirection(self, id):
         """Get entity direction (entityId:int) => Vec3"""
-        s = self.conn.sendReceive(self.pkg + b".getDirection", id)
-        return Vec3(*map(float, s.split(",")))
+        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getDirection", id))
 
     def setRotation(self, id, yaw):
         """Set entity rotation (entityId:int, yaw)"""
@@ -70,7 +67,7 @@ class CmdPositioner:
 
     def getRotation(self, id):
         """get entity rotation (entityId:int) => float"""
-        return float(self.conn.sendReceive(self.pkg + b".getRotation", id))
+        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getRotation", id))
 
     def setPitch(self, id, pitch):
         """Set entity pitch (entityId:int, pitch)"""
@@ -78,11 +75,25 @@ class CmdPositioner:
 
     def getPitch(self, id):
         """get entity pitch (entityId:int) => float"""
-        return float(self.conn.sendReceive(self.pkg + b".getPitch", id))
+        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getPitch", id))
 
     def setting(self, setting, status):
         """Set a player setting (setting, status). keys: autojump"""
         self.conn.send(self.pkg + b".setting", setting, 1 if bool(status) else 0)
+
+    @staticmethod
+    def _parseScalar(converter, string):
+        try:
+            return converter(string)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _parseVec3(converter, string):
+        try:
+            return Vec3(*list(map(converter, string.split(","))))
+        except ValueError:
+            return None
 
 class CmdEntity(CmdPositioner):
     """Methods for entities"""
@@ -130,30 +141,31 @@ class Entity:
 
 class CmdPlayer(CmdPositioner):
     """Methods for the host (Raspberry Pi) player"""
-    def __init__(self, connection):
-        CmdPositioner.__init__(self, connection, b"player")
+    def __init__(self, connection, playerName):
+        CmdPositioner.__init__(self, connection,  b"player")
         self.conn = connection
+        self.playerName = playerName
 
     def getPos(self):
-        return CmdPositioner.getPos(self, [])
+        return CmdPositioner.getPos(self, self.playerName)
     def setPos(self, *args):
-        return CmdPositioner.setPos(self, [], args)
+        return CmdPositioner.setPos(self, self.playerName, args)
     def getTilePos(self):
-        return CmdPositioner.getTilePos(self, [])
+        return CmdPositioner.getTilePos(self, self.playerName)
     def setTilePos(self, *args):
-        return CmdPositioner.setTilePos(self, [], args)
+        return CmdPositioner.setTilePos(self, self.playerName, args)
     def setDirection(self, *args):
-        return CmdPositioner.setDirection(self, [], args)
+        return CmdPositioner.setDirection(self, self.playerName, args)
     def getDirection(self):
-        return CmdPositioner.getDirection(self, [])
+        return CmdPositioner.getDirection(self, self.playerName)
     def setRotation(self, yaw):
-        return CmdPositioner.setRotation(self, [], yaw)
+        return CmdPositioner.setRotation(self,self.playerName, yaw)
     def getRotation(self):
-        return CmdPositioner.getRotation(self, [])
+        return CmdPositioner.getRotation(self, self.playerName)
     def setPitch(self, pitch):
-        return CmdPositioner.setPitch(self, [], pitch)
+        return CmdPositioner.setPitch(self, self.playerName, pitch)
     def getPitch(self):
-        return CmdPositioner.getPitch(self, [])
+        return CmdPositioner.getPitch(self, self.playerName)
 
 class CmdCamera:
     def __init__(self, connection):
@@ -206,13 +218,14 @@ class CmdEvents:
 
 class Minecraft:
     """The main class to interact with a running instance of Minecraft Pi."""
-    def __init__(self, connection):
+    def __init__(self, connection, playerName):
         self.conn = connection
 
         self.camera = CmdCamera(connection)
         self.entity = CmdEntity(connection)
-        self.player = CmdPlayer(connection)
+        self.player = CmdPlayer(connection, playerName)
         self.events = CmdEvents(connection)
+        self._playerName = playerName
 
     def getBlock(self, *args):
         """Get block (x,y,z) => id:int"""
@@ -272,8 +285,13 @@ class Minecraft:
         return ids.split("|")
 
     def getPlayerEntityId(self, name):
-        """Get the entity id of the named player => [id:int]"""
+        """Get the entity id of the named player => id"""
         return self.conn.sendReceive(b"world.getPlayerId", name)
+
+    def getPlayerNames(self):
+        """Get the names of all currently connected players (or an empty List) => [str]"""
+        ids = self.conn.sendReceive(b"world.getPlayerIds")
+        return [] if not ids else [tuple.split(":")[0] for tuple in ids.split("|")]
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
@@ -292,10 +310,25 @@ class Minecraft:
         self.conn.send(b"world.setting", setting, 1 if bool(status) else 0)
 
     def setPlayer(self, name):
-        return self.conn.sendReceive(b"setPlayer", name)
+        """Set the current player => bool"""
+        if self.conn.sendReceive(b"setPlayer", name):
+            self._playerName = name
+            return True
+        else:
+            return False
+
+    def getPlayerName(self):
+        """Get the name of the previously set / currently attached player => str"""
+        if self._playerName:
+            return self._playerName
+        else:
+            p = self.conn.sendReceive(b"getPlayer")
+            return None if p == "(none)" else p
+
+    playerName = property(getPlayerName)
 
     @staticmethod
-    def create(address="localhost", port=4711, debug=False):
+    def create(address="localhost", port=4711, playerName=[], debug=False):
         if "JRP_API_HOST" in os.environ:
             address = os.environ["JRP_API_HOST"]
         if "JRP_API_PORT" in os.environ:
@@ -303,7 +336,8 @@ class Minecraft:
                 port = int(os.environ["JRP_API_PORT"])
             except ValueError:
                 pass
-        return Minecraft(Connection(address, port, debug))
+
+        return Minecraft(Connection(address, port, debug), playerName)
 
 
 def mcpy(func):
