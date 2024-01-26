@@ -45,6 +45,18 @@ class CmdPositioner:
         """Set entity position (entityId:int, x,y,z)"""
         self.conn.send(self.pkg + b".setPos", id, args)
 
+    def enableControl(self, id):
+        """Enable control of entity (entityId:int)"""
+        self.conn.send(self.pkg + b".enableControl", id)
+
+    def disableControl(self, id):
+        """Disable control of entity (entityId:int)"""
+        self.conn.send(self.pkg + b".disableControl", id)
+
+    def walkTo(self, id, *args):
+        """Move entity (entityId:int, x,y,z)"""
+        self.conn.send(self.pkg + b".walkTo", id, args)
+
     def getTilePos(self, id):
         """Get entity tile position (entityId:int) => Vec3"""
         return self._parseVec3(int, self.conn.sendReceive(self.pkg + b".getTile", id))
@@ -119,6 +131,12 @@ class Entity:
         return self.p.getPos(self.id)
     def setPos(self, *args):
         return self.p.setPos(self.id, args)
+    def enableControl(self):
+        return self.p.enableControl(self.id)
+    def disableControl(self):
+        return self.p.disableControl(self.id)
+    def walkTo(self, *args):
+        return self.p.walkTo(self.id, args)
     def getTilePos(self):
         return self.p.getTilePos(self.id)
     def setTilePos(self, *args):
@@ -248,6 +266,10 @@ class Minecraft:
     def setBlocks(self, *args):
         """Set a cuboid of blocks (x0,y0,z0,x1,y1,z1,id,[data])"""
         self.conn.send(b"world.setBlocks", *args)
+
+    def isBlockPassable(self, *args):
+        """Check if block is passable (x,y,z) => Boolean"""
+        return self.conn.sendReceive(b"world.isBlockPassable", *args) == "true"
 
     def setSign(self, *args):
         """Set a sign (x,y,z,sign_type,direction,line1,line2,line3,line4)
