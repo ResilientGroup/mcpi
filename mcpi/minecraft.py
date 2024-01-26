@@ -6,27 +6,6 @@ from .vec3 import Vec3
 from .event import BlockEvent, ChatEvent, ProjectileEvent
 from .util import flatten
 
-""" Minecraft PI low level api v0.1_1
-
-    Note: many methods have the parameter *arg. This solution makes it
-    simple to allow different types, and variable number of arguments.
-    The actual magic is a mix of flatten_parameters() and __iter__. Example:
-    A Cube class could implement __iter__ to work in Minecraft.setBlocks(c, id).
-
-    (Because of this, it's possible to "erase" arguments. CmdPlayer removes
-     entityId, by injecting [] that flattens to nothing)
-
-    @author: Aron Nieminen, Mojang AB"""
-
-""" Updated to include functionality provided by RaspberryJuice:
-- getBlocks()
-- getDirection()
-- getPitch()
-- getRotation()
-- getPlayerEntityId()
-- pollChatPosts()
-- setSign()
-- spawnEntity()"""
 
 def intFloor(*args):
     return [int(math.floor(x)) for x in flatten(args)]
