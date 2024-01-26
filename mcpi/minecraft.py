@@ -24,18 +24,6 @@ class CmdPositioner:
         """Set entity position (entityId:int, x,y,z)"""
         self.conn.sendReceive(self.pkg + b".setPos", id, args)
 
-    def enableControl(self, id):
-        """Enable control of entity (entityId:int)"""
-        self.conn.sendReceive(self.pkg + b".enableControl", id)
-
-    def disableControl(self, id):
-        """Disable control of entity (entityId:int)"""
-        self.conn.sendReceive(self.pkg + b".disableControl", id)
-
-    def walkTo(self, id, *args):
-        """Move entity (entityId:int, x,y,z)"""
-        self.conn.sendReceive(self.pkg + b".walkTo", id, args)
-
     def getTilePos(self, id):
         """Get entity tile position (entityId:int) => Vec3"""
         return self._parseVec3(int, self.conn.sendReceive(self.pkg + b".getTile", id))
@@ -96,6 +84,18 @@ class CmdEntity(CmdPositioner):
         
         Also can be used to find name of entity if entity is not a player."""
         return self.conn.sendReceive(b"entity.getName", id)
+
+    def enableControl(self, id):
+        """Enable control of entity (entityId:int)"""
+        self.conn.sendReceive(self.pkg + b".enableControl", id)
+
+    def disableControl(self, id):
+        """Disable control of entity (entityId:int)"""
+        self.conn.sendReceive(self.pkg + b".disableControl", id)
+
+    def walkTo(self, id, *args):
+        """Move entity (entityId:int, x,y,z)"""
+        self.conn.sendReceive(self.pkg + b".walkTo", id, args)
 
     def remove(self, id):
         self.conn.sendReceive(b"entity.remove", id)
