@@ -32,25 +32,17 @@ class Connection:
                 e += "Last Message: <%s>\n"%self.lastSent.strip()
                 sys.stderr.write(e)
 
-    def send(self, f, *data):
+    def _send(self, f, *data):
         """
         Sends data. Note that a trailing newline '\n' is added here
         """
         s = b"".join([f, b"(", flatten_parameters_to_bytestring(data), b")", b"\n"])
-        self._send(s)
-
-
-    def _send(self, s):
-        """
-        The actual socket interaction from self.send, extracted for easier mocking
-        and testing
-        """
         self.drain()
         self.lastSent = s
 
         self.socket.sendall(s)
 
-    def receive(self):
+    def _receive(self):
         """Receives data. Note that the trailing newline '\n' is trimmed"""
         s = self.socket.makefile("r").readline().rstrip("\n")
         if s == Connection.RequestFailed:
@@ -59,5 +51,5 @@ class Connection:
 
     def sendReceive(self, *data):
         """Sends and receive data"""
-        self.send(*data)
-        return self.receive()
+        self._send(*data)
+        return self._receive()
