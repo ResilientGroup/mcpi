@@ -103,7 +103,7 @@ class CmdEntity(CmdPositioner):
 
 class Entity:
     def __init__(self, conn, entity_uuid, typeName):
-        self.p = CmdPositioner(conn, b"entity")
+        self.p = CmdEntity(conn)
         self.id = entity_uuid
         self.type = typeName
     def getPos(self):
