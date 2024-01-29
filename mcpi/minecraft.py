@@ -6,27 +6,6 @@ from .vec3 import Vec3
 from .event import BlockEvent, ChatEvent, ProjectileEvent
 from .util import flatten
 
-""" Minecraft PI low level api v0.1_1
-
-    Note: many methods have the parameter *arg. This solution makes it
-    simple to allow different types, and variable number of arguments.
-    The actual magic is a mix of flatten_parameters() and __iter__. Example:
-    A Cube class could implement __iter__ to work in Minecraft.setBlocks(c, id).
-
-    (Because of this, it's possible to "erase" arguments. CmdPlayer removes
-     entityId, by injecting [] that flattens to nothing)
-
-    @author: Aron Nieminen, Mojang AB"""
-
-""" Updated to include functionality provided by RaspberryJuice:
-- getBlocks()
-- getDirection()
-- getPitch()
-- getRotation()
-- getPlayerEntityId()
-- pollChatPosts()
-- setSign()
-- spawnEntity()"""
 
 def intFloor(*args):
     return [int(math.floor(x)) for x in flatten(args)]
@@ -43,7 +22,7 @@ class CmdPositioner:
 
     def setPos(self, id, *args):
         """Set entity position (entityId:int, x,y,z)"""
-        self.conn.send(self.pkg + b".setPos", id, args)
+        self.conn.sendReceive(self.pkg + b".setPos", id, args)
 
     def getTilePos(self, id):
         """Get entity tile position (entityId:int) => Vec3"""
@@ -51,11 +30,11 @@ class CmdPositioner:
 
     def setTilePos(self, id, *args):
         """Set entity tile position (entityId:int) => Vec3"""
-        self.conn.send(self.pkg + b".setTile", id, intFloor(*args))
+        self.conn.sendReceive(self.pkg + b".setTile", id, intFloor(*args))
 
     def setDirection(self, id, *args):
         """Set entity direction (entityId:int, x,y,z)"""
-        self.conn.send(self.pkg + b".setDirection", id, args)
+        self.conn.sendReceive(self.pkg + b".setDirection", id, args)
 
     def getDirection(self, id):
         """Get entity direction (entityId:int) => Vec3"""
@@ -63,7 +42,7 @@ class CmdPositioner:
 
     def setRotation(self, id, yaw):
         """Set entity rotation (entityId:int, yaw)"""
-        self.conn.send(self.pkg + b".setRotation", id, yaw)
+        self.conn.sendReceive(self.pkg + b".setRotation", id, yaw)
 
     def getRotation(self, id):
         """get entity rotation (entityId:int) => float"""
@@ -71,7 +50,7 @@ class CmdPositioner:
 
     def setPitch(self, id, pitch):
         """Set entity pitch (entityId:int, pitch)"""
-        self.conn.send(self.pkg + b".setPitch", id, pitch)
+        self.conn.sendReceive(self.pkg + b".setPitch", id, pitch)
 
     def getPitch(self, id):
         """get entity pitch (entityId:int) => float"""
@@ -79,7 +58,7 @@ class CmdPositioner:
 
     def setting(self, setting, status):
         """Set a player setting (setting, status). keys: autojump"""
-        self.conn.send(self.pkg + b".setting", setting, 1 if bool(status) else 0)
+        self.conn.sendReceive(self.pkg + b".setting", setting, 1 if bool(status) else 0)
 
     @staticmethod
     def _parseScalar(converter, string):
@@ -106,8 +85,20 @@ class CmdEntity(CmdPositioner):
         Also can be used to find name of entity if entity is not a player."""
         return self.conn.sendReceive(b"entity.getName", id)
 
+    def enableControl(self, id):
+        """Enable control of entity (entityId:int)"""
+        self.conn.sendReceive(self.pkg + b".enableControl", id)
+
+    def disableControl(self, id):
+        """Disable control of entity (entityId:int)"""
+        self.conn.sendReceive(self.pkg + b".disableControl", id)
+
+    def walkTo(self, id, *args):
+        """Move entity (entityId:int, x,y,z)"""
+        self.conn.sendReceive(self.pkg + b".walkTo", id, args)
+
     def remove(self, id):
-        self.conn.send(b"entity.remove", id)
+        self.conn.sendReceive(b"entity.remove", id)
 
 
 class Entity:
@@ -119,6 +110,12 @@ class Entity:
         return self.p.getPos(self.id)
     def setPos(self, *args):
         return self.p.setPos(self.id, args)
+    def enableControl(self):
+        return self.p.enableControl(self.id)
+    def disableControl(self):
+        return self.p.disableControl(self.id)
+    def walkTo(self, *args):
+        return self.p.walkTo(self.id, args)
     def getTilePos(self):
         return self.p.getTilePos(self.id)
     def setTilePos(self, *args):
@@ -136,7 +133,7 @@ class Entity:
     def getPitch(self):
         return self.p.getPitch(self.id)
     def remove(self):
-        self.p.conn.send(b"entity.remove", self.id)
+        self.p.conn.sendReceive(b"entity.remove", self.id)
 
 
 class CmdPlayer(CmdPositioner):
@@ -173,19 +170,19 @@ class CmdCamera:
 
     def setNormal(self, *args):
         """Set camera mode to normal Minecraft view ([entityId])"""
-        self.conn.send(b"camera.mode.setNormal", args)
+        self.conn.sendReceive(b"camera.mode.setNormal", args)
 
     def setFixed(self):
         """Set camera mode to fixed view"""
-        self.conn.send(b"camera.mode.setFixed")
+        self.conn.sendReceive(b"camera.mode.setFixed")
 
     def setFollow(self, *args):
         """Set camera mode to follow an entity ([entityId])"""
-        self.conn.send(b"camera.mode.setFollow", args)
+        self.conn.sendReceive(b"camera.mode.setFollow", args)
 
     def setPos(self, *args):
         """Set camera entity position (x,y,z)"""
-        self.conn.send(b"camera.setPos", args)
+        self.conn.sendReceive(b"camera.setPos", args)
 
 
 class CmdEvents:
@@ -195,7 +192,7 @@ class CmdEvents:
 
     def clearAll(self):
         """Clear all old events"""
-        self.conn.send(b"events.clear")
+        self.conn.sendReceive(b"events.clear")
 
     def pollBlockHits(self):
         """Only triggered by sword => [BlockEvent]"""
@@ -243,17 +240,21 @@ class Minecraft:
 
     def setBlock(self, *args):
         """Set block (x,y,z,id,[data])"""
-        self.conn.send(b"world.setBlock", *args)
+        self.conn.sendReceive(b"world.setBlock", *args)
 
     def setBlocks(self, *args):
         """Set a cuboid of blocks (x0,y0,z0,x1,y1,z1,id,[data])"""
-        self.conn.send(b"world.setBlocks", *args)
+        self.conn.sendReceive(b"world.setBlocks", *args)
+
+    def isBlockPassable(self, *args):
+        """Check if block is passable (x,y,z) => Boolean"""
+        return self.conn.sendReceive(b"world.isBlockPassable", *args) == "true"
 
     def setSign(self, *args):
         """Set a sign (x,y,z,sign_type,direction,line1,line2,line3,line4)
         direction: 0-north, 1-east, 2-south 3-west
         """
-        self.conn.send(b"world.setSign", args)
+        self.conn.sendReceive(b"world.setSign", args)
 
     def spawnEntity(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
@@ -261,7 +262,7 @@ class Minecraft:
 
     def spawnParticle(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
-        return self.conn.send(b"world.spawnParticle", *args)
+        return self.conn.sendReceive(b"world.spawnParticle", *args)
 
     def getNearbyEntities(self, *args):
         """get nearby entities (x,y,z)"""
@@ -295,19 +296,19 @@ class Minecraft:
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
-        self.conn.send(b"world.checkpoint.save")
+        self.conn.sendReceive(b"world.checkpoint.save")
 
     def restoreCheckpoint(self):
         """Restore the world state to the checkpoint"""
-        self.conn.send(b"world.checkpoint.restore")
+        self.conn.sendReceive(b"world.checkpoint.restore")
 
     def postToChat(self, msg):
         """Post a message to the game chat"""
-        self.conn.send(b"chat.post", msg)
+        self.conn.sendReceive(b"chat.post", msg)
 
     def setting(self, setting, status):
         """Set a world setting (setting, status). keys: world_immutable, nametags_visible"""
-        self.conn.send(b"world.setting", setting, 1 if bool(status) else 0)
+        self.conn.sendReceive(b"world.setting", setting, 1 if bool(status) else 0)
 
     def setPlayer(self, name):
         """Set the current player => bool"""
