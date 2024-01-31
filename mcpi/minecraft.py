@@ -102,10 +102,10 @@ class CmdEntity(CmdPositioner):
 
 
 class Entity:
-    def __init__(self, conn, entity_uuid, typeName):
+    def __init__(self, conn, typeName, entity_uuid):
         self.p = CmdEntity(conn)
-        self.id = entity_uuid
         self.type = typeName
+        self.id = entity_uuid
     def getPos(self):
         return self.p.getPos(self.id)
     def setPos(self, *args):
@@ -258,7 +258,7 @@ class Minecraft:
 
     def spawnEntity(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
-        return Entity(self.conn, self.conn.sendReceive(b"world.spawnEntity", *args), args[3])
+        return Entity(self.conn, args[3], self.conn.sendReceive(b"world.spawnEntity", *args))
 
     def spawnParticle(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
@@ -268,8 +268,7 @@ class Minecraft:
         """get nearby entities (x,y,z)"""
         entities = []
         for i in self.conn.sendReceive(b"world.getNearbyEntities", *args).split("|"):
-            name, eid = i.split(":")
-            entities.append(Entity(self.conn, eid, name))
+            entities.append(Entity(self.conn, *i.split(":")))
         return entities
 
     def removeEntity(self, *args):
