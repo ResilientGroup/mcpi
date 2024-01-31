@@ -196,20 +196,17 @@ class CmdEvents:
 
     def pollBlockHits(self):
         """Only triggered by sword => [BlockEvent]"""
-        s = self.conn.sendReceive(b"events.block.hits")
-        events = [e for e in s.split("|") if e]
+        events = self.conn.sendReceiveList(b"events.block.hits")
         return [BlockEvent.Hit(*e.split(",")) for e in events]
 
     def pollChatPosts(self):
         """Triggered by posts to chat => [ChatEvent]"""
-        s = self.conn.sendReceive(b"events.chat.posts")
-        events = [e for e in s.split("|") if e]
+        events = self.conn.sendReceiveList(b"events.chat.posts")
         return [ChatEvent.Post(int(e[:e.find(",")]), e[e.find(",") + 1:]) for e in events]
 
     def pollProjectileHits(self):
         """Only triggered by projectiles => [BlockEvent]"""
-        s = self.conn.sendReceive(b"events.projectile.hits")
-        events = [e for e in s.split("|") if e]
+        events = self.conn.sendReceiveList(b"events.projectile.hits")
         return [ProjectileEvent.Hit(*e.split(",")) for e in events]
 
 
@@ -267,7 +264,7 @@ class Minecraft:
     def getNearbyEntities(self, *args):
         """get nearby entities (x,y,z)"""
         entities = []
-        for i in self.conn.sendReceive(b"world.getNearbyEntities", *args).split("|"):
+        for i in self.conn.sendReceiveList(b"world.getNearbyEntities", *args):
             entities.append(Entity(self.conn, *i.split(":")))
         return entities
 
@@ -281,8 +278,7 @@ class Minecraft:
 
     def getPlayerEntityIds(self):
         """Get the entity ids of the connected players => [id:int]"""
-        ids = self.conn.sendReceive(b"world.getPlayerIds")
-        return ids.split("|")
+        return self.conn.sendReceiveList(b"world.getPlayerIds")
 
     def getPlayerEntityId(self, name):
         """Get the entity id of the named player => id"""
@@ -290,8 +286,8 @@ class Minecraft:
 
     def getPlayerNames(self):
         """Get the names of all currently connected players (or an empty List) => [str]"""
-        ids = self.conn.sendReceive(b"world.getPlayerIds")
-        return [] if not ids else [tuple.split(":")[0] for tuple in ids.split("|")]
+        ids = self.conn.sendReceiveList(b"world.getPlayerIds")
+        return [] if not ids else [tuple.split(":")[0] for tuple in ids]
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
