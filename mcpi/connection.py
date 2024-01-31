@@ -53,3 +53,11 @@ class Connection:
         """Sends and receive data"""
         self._send(*data)
         return self._receive()
+
+    def sendReceiveList(self, *data):
+        """Send data and receive a List of items."""
+        self._send(*data)
+        return self._unmarshalList(self._receive())
+
+    def _unmarshalList(self, dataStr):
+        return [] if not dataStr else [item for item in dataStr.split("|")]
