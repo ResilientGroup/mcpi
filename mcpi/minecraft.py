@@ -267,7 +267,7 @@ class Minecraft:
     def getNearbyEntities(self, *args):
         """get nearby entities (x,y,z)"""
         entities = []
-        for i in self.conn.sendReceive(b"world.getNearbyEntities", *args).split(","):
+        for i in self.conn.sendReceive(b"world.getNearbyEntities", *args).split("|"):
             name, eid = i.split(":")
             entities.append(Entity(self.conn, eid, name))
         return entities
