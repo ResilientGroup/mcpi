@@ -202,7 +202,7 @@ class CmdEvents:
     def pollChatPosts(self):
         """Triggered by posts to chat => [ChatEvent]"""
         events = self.conn.sendReceiveList(b"events.chat.posts")
-        return [ChatEvent.Post(int(e[:e.find(",")]), e[e.find(",") + 1:]) for e in events]
+        return [ChatEvent.Post(e[:e.find(",")], e[e.find(",") + 1:]) for e in events]
 
     def pollProjectileHits(self):
         """Only triggered by projectiles => [BlockEvent]"""

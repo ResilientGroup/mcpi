@@ -42,7 +42,7 @@ class ChatEvent:
 
     @staticmethod
     def Post(entityId, message):
-        return ChatEvent(ChatEvent.POST, entityId, message)
+        return ChatEvent(ChatEvent.POST, int(entityId), message)
 
 
 class ProjectileEvent:
