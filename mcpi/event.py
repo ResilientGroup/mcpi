@@ -27,8 +27,9 @@ class ChatEvent:
     """An Event related to chat (e.g. posts)"""
     POST = 0
 
-    def __init__(self, type, entityId, message):
+    def __init__(self, type, name, entityId, message):
         self.type = type
+        self.name = name
         self.entityId = entityId
         self.message = message
 
@@ -37,12 +38,12 @@ class ChatEvent:
             ChatEvent.POST: "ChatEvent.POST"
         }.get(self.type, "???")
 
-        return "ChatEvent(%s, %d, %s)" % (
-            sType, self.entityId, self.message)
+        return "ChatEvent(%s, %s:%s, %s)" % (
+            sType, self.name, self.entityId, self.message)
 
     @staticmethod
-    def Post(entityId, message):
-        return ChatEvent(ChatEvent.POST, int(entityId), message)
+    def Post(name, entityId, message):
+        return ChatEvent(ChatEvent.POST, name, entityId, message)
 
 
 class ProjectileEvent:
