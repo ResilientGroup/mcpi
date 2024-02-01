@@ -71,7 +71,7 @@ class Connection:
         return self._parseVec3(converter, self._receive())
 
     def _unmarshalList(self, dataStr):
-        return [] if not dataStr else [item for item in dataStr.split("|")]
+        return [] if not dataStr else dataStr.split("|")
 
     def _parseScalar(self, converter, string):
         try:
