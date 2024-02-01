@@ -46,7 +46,7 @@ class CmdPositioner:
 
     def getRotation(self, id):
         """get entity rotation (entityId:int) => float"""
-        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getRotation", id))
+        return self.conn.sendReceiveScalar(float, self.pkg + b".getRotation", id)
 
     def setPitch(self, id, pitch):
         """Set entity pitch (entityId:int, pitch)"""
@@ -54,18 +54,11 @@ class CmdPositioner:
 
     def getPitch(self, id):
         """get entity pitch (entityId:int) => float"""
-        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getPitch", id))
+        return self.conn.sendReceiveScalar(float, self.pkg + b".getPitch", id)
 
     def setting(self, setting, status):
         """Set a player setting (setting, status). keys: autojump"""
         self.conn.sendReceive(self.pkg + b".setting", setting, 1 if bool(status) else 0)
-
-    @staticmethod
-    def _parseScalar(converter, string):
-        try:
-            return converter(string)
-        except ValueError:
-            return None
 
     @staticmethod
     def _parseVec3(converter, string):

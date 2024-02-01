@@ -59,5 +59,16 @@ class Connection:
         self._send(*data)
         return self._unmarshalList(self._receive())
 
+    def sendReceiveScalar(self, converter, *data):
+        """Send data and receive a single item converted to the passed type."""
+        self._send(*data)
+        return self._parseScalar(converter, self._receive())
+
     def _unmarshalList(self, dataStr):
         return [] if not dataStr else [item for item in dataStr.split("|")]
+
+    def _parseScalar(self, converter, string):
+        try:
+            return converter(string)
+        except ValueError:
+            return None
