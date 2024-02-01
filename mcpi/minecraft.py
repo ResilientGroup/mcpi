@@ -6,7 +6,7 @@ from .event import BlockEvent, ChatEvent, ProjectileEvent
 from .util import flatten
 
 
-def intFloor(*args):
+def _intFloor(*args):
     return [int(math.floor(x)) for x in flatten(args)]
 
 class CmdPositioner:
@@ -29,7 +29,7 @@ class CmdPositioner:
 
     def setTilePos(self, id, *args):
         """Set entity tile position (entityId:int) => Vec3"""
-        self.conn.sendReceive(self.pkg + b".setTile", id, intFloor(*args))
+        self.conn.sendReceive(self.pkg + b".setTile", id, _intFloor(*args))
 
     def setDirection(self, id, *args):
         """Set entity direction (entityId:int, x,y,z)"""
@@ -208,11 +208,11 @@ class Minecraft:
 
     def getBlock(self, *args):
         """Get block (x,y,z) => id:int"""
-        return self.conn.sendReceive(b"world.getBlock", intFloor(args))
+        return self.conn.sendReceive(b"world.getBlock", _intFloor(args))
 
     def getBlockWithData(self, *args):
         """Get block with data (x,y,z) => Block"""
-        return self.conn.sendReceive(b"world.getBlockWithData", intFloor(args)).split(",")
+        return self.conn.sendReceive(b"world.getBlockWithData", _intFloor(args)).split(",")
 
     def getBlocks(self, *args):
         """Get a cuboid of blocks (x0,y0,z0,x1,y1,z1) => [id:int]"""
@@ -259,7 +259,7 @@ class Minecraft:
 
     def getHeight(self, *args):
         """Get the height of the world (x,z) => int"""
-        return int(self.conn.sendReceive(b"world.getHeight", intFloor(args)))
+        return int(self.conn.sendReceive(b"world.getHeight", _intFloor(args)))
 
     def getPlayerEntityIds(self):
         """Get the entity ids of the connected players => [id:int]"""
