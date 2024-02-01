@@ -246,10 +246,8 @@ class Minecraft:
 
     def getNearbyEntities(self, *args):
         """get nearby entities (x,y,z)"""
-        entities = []
-        for i in self.conn.sendReceiveList(b"world.getNearbyEntities", *args):
-            entities.append(Entity(self.conn, *i.split(":")))
-        return entities
+        entities = self.conn.sendReceiveList(b"world.getNearbyEntities", *args)
+        return [Entity(self.conn, *e.split(":")) for e in entities]
 
     def removeEntity(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
