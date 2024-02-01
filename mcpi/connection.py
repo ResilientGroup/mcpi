@@ -71,6 +71,10 @@ class Connection:
         self._send(*data)
         return self._parseVec3(converter, self._receive())
 
+    def sendReceiveObjectList(self, constructor, *data, **kwargs):
+        """Send data and receive a List of objects created by passing the received attributes to constructor."""
+        return [constructor(*o.split(",", **kwargs)) for o in (self.sendReceiveList(*data))]
+
     def _unmarshalList(self, dataStr, **kwargs):
         return [] if not dataStr else dataStr.split(**kwargs)
 

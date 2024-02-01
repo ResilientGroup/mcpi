@@ -181,18 +181,15 @@ class CmdEvents:
 
     def pollBlockHits(self):
         """Only triggered by sword => [BlockEvent]"""
-        events = self.conn.sendReceiveList(b"events.block.hits")
-        return [BlockEvent.Hit(*e.split(",")) for e in events]
+        return self.conn.sendReceiveObjectList(BlockEvent.Hit, b"events.block.hits")
 
     def pollChatPosts(self):
         """Triggered by posts to chat => [ChatEvent]"""
-        events = self.conn.sendReceiveList(b"events.chat.posts")
-        return [ChatEvent.Post(*e.split(",", 2)) for e in events]
+        return self.conn.sendReceiveObjectList(ChatEvent.Post, b"events.chat.posts", maxsplit=2)
 
     def pollProjectileHits(self):
         """Only triggered by projectiles => [BlockEvent]"""
-        events = self.conn.sendReceiveList(b"events.projectile.hits")
-        return [ProjectileEvent.Hit(*e.split(",")) for e in events]
+        return self.conn.sendReceiveObjectList(ProjectileEvent.Hit, b"events.projectile.hits")
 
 
 class Minecraft:
@@ -246,8 +243,8 @@ class Minecraft:
 
     def getNearbyEntities(self, *args):
         """get nearby entities (x,y,z)"""
-        entities = self.conn.sendReceiveList(b"world.getNearbyEntities", *args)
-        return [Entity(self.conn, *e.split(",")) for e in entities]
+        return self.conn.sendReceiveObjectList(
+            lambda *attr: Entity(self.conn, *attr), b"world.getNearbyEntities", *args)
 
     def removeEntity(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
@@ -259,8 +256,7 @@ class Minecraft:
 
     def getPlayerEntityIds(self):
         """Get the entity ids of the connected players => [id]"""
-        ids = self.conn.sendReceiveList(b"world.getPlayerIds")
-        return [] if not ids else [tuple.split(",")[1] for tuple in ids]
+        return self.conn.sendReceiveObjectList(lambda name, entityId: entityId, b"world.getPlayerIds")
 
     def getPlayerEntityId(self, name):
         """Get the entity id of the named player => id"""
@@ -268,8 +264,7 @@ class Minecraft:
 
     def getPlayerNames(self):
         """Get the names of all currently connected players (or an empty List) => [str]"""
-        ids = self.conn.sendReceiveList(b"world.getPlayerIds")
-        return [] if not ids else [tuple.split(",")[0] for tuple in ids]
+        return self.conn.sendReceiveObjectList(lambda name, entityId: name, b"world.getPlayerIds")
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
