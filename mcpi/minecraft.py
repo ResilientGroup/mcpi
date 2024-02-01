@@ -258,8 +258,9 @@ class Minecraft:
         return int(self.conn.sendReceive(b"world.getHeight", _intFloor(args)))
 
     def getPlayerEntityIds(self):
-        """Get the entity ids of the connected players => [id:int]"""
-        return self.conn.sendReceiveList(b"world.getPlayerIds")
+        """Get the entity ids of the connected players => [id]"""
+        ids = self.conn.sendReceiveList(b"world.getPlayerIds")
+        return [] if not ids else [tuple.split(":")[1] for tuple in ids]
 
     def getPlayerEntityId(self, name):
         """Get the entity id of the named player => id"""
