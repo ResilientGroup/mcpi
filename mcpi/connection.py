@@ -2,6 +2,7 @@ import socket
 import select
 import sys
 from .util import flatten_parameters_to_bytestring
+from .vec3 import Vec3
 
 """ @author: Aron Nieminen, Mojang AB"""
 
@@ -64,11 +65,22 @@ class Connection:
         self._send(*data)
         return self._parseScalar(converter, self._receive())
 
+    def sendReceiveVec3(self, converter, *data):
+        """Send data and receive a Vec3, with each coordinate converted to the passed type."""
+        self._send(*data)
+        return self._parseVec3(converter, self._receive())
+
     def _unmarshalList(self, dataStr):
         return [] if not dataStr else [item for item in dataStr.split("|")]
 
     def _parseScalar(self, converter, string):
         try:
             return converter(string)
+        except ValueError:
+            return None
+
+    def _parseVec3(self, converter, string):
+        try:
+            return Vec3(*list(map(converter, string.split(","))))
         except ValueError:
             return None

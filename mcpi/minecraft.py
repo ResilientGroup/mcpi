@@ -2,7 +2,6 @@ import os
 import math
 
 from .connection import Connection
-from .vec3 import Vec3
 from .event import BlockEvent, ChatEvent, ProjectileEvent
 from .util import flatten
 
@@ -18,7 +17,7 @@ class CmdPositioner:
 
     def getPos(self, id):
         """Get entity position (entityId:int) => Vec3"""
-        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getPos", id))
+        return self.conn.sendReceiveVec3(float, self.pkg + b".getPos", id)
 
     def setPos(self, id, *args):
         """Set entity position (entityId:int, x,y,z)"""
@@ -26,7 +25,7 @@ class CmdPositioner:
 
     def getTilePos(self, id):
         """Get entity tile position (entityId:int) => Vec3"""
-        return self._parseVec3(int, self.conn.sendReceive(self.pkg + b".getTile", id))
+        return self.conn.sendReceiveVec3(int, self.pkg + b".getTile", id)
 
     def setTilePos(self, id, *args):
         """Set entity tile position (entityId:int) => Vec3"""
@@ -38,7 +37,7 @@ class CmdPositioner:
 
     def getDirection(self, id):
         """Get entity direction (entityId:int) => Vec3"""
-        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getDirection", id))
+        return self.conn.sendReceiveVec3(float, self.pkg + b".getDirection", id)
 
     def setRotation(self, id, yaw):
         """Set entity rotation (entityId:int, yaw)"""
@@ -59,13 +58,6 @@ class CmdPositioner:
     def setting(self, setting, status):
         """Set a player setting (setting, status). keys: autojump"""
         self.conn.sendReceive(self.pkg + b".setting", setting, 1 if bool(status) else 0)
-
-    @staticmethod
-    def _parseVec3(converter, string):
-        try:
-            return Vec3(*list(map(converter, string.split(","))))
-        except ValueError:
-            return None
 
 class CmdEntity(CmdPositioner):
     """Methods for entities"""
