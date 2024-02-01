@@ -247,7 +247,7 @@ class Minecraft:
     def getNearbyEntities(self, *args):
         """get nearby entities (x,y,z)"""
         entities = self.conn.sendReceiveList(b"world.getNearbyEntities", *args)
-        return [Entity(self.conn, *e.split(":")) for e in entities]
+        return [Entity(self.conn, *e.split(",")) for e in entities]
 
     def removeEntity(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
@@ -260,7 +260,7 @@ class Minecraft:
     def getPlayerEntityIds(self):
         """Get the entity ids of the connected players => [id]"""
         ids = self.conn.sendReceiveList(b"world.getPlayerIds")
-        return [] if not ids else [tuple.split(":")[1] for tuple in ids]
+        return [] if not ids else [tuple.split(",")[1] for tuple in ids]
 
     def getPlayerEntityId(self, name):
         """Get the entity id of the named player => id"""
@@ -269,7 +269,7 @@ class Minecraft:
     def getPlayerNames(self):
         """Get the names of all currently connected players (or an empty List) => [str]"""
         ids = self.conn.sendReceiveList(b"world.getPlayerIds")
-        return [] if not ids else [tuple.split(":")[0] for tuple in ids]
+        return [] if not ids else [tuple.split(",")[0] for tuple in ids]
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
