@@ -212,11 +212,11 @@ class Minecraft:
 
     def getBlockWithData(self, *args):
         """Get block with data (x,y,z) => Block"""
-        return self.conn.sendReceive(b"world.getBlockWithData", _intFloor(args)).split(",")
+        return self.conn.sendReceiveList(b"world.getBlockWithData", _intFloor(args), sep=",")
 
     def getBlocks(self, *args):
         """Get a cuboid of blocks (x0,y0,z0,x1,y1,z1) => [id:int]"""
-        return self.conn.sendReceive(b"world.getBlocks", *args).split(",")
+        return self.conn.sendReceiveList(b"world.getBlocks", *args, sep=",")
 
     def setBlock(self, *args):
         """Set block (x,y,z,id,[data])"""

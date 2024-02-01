@@ -55,10 +55,11 @@ class Connection:
         self._send(*data)
         return self._receive()
 
-    def sendReceiveList(self, *data):
+    def sendReceiveList(self, *data, **kwargs):
         """Send data and receive a List of items."""
         self._send(*data)
-        return self._unmarshalList(self._receive())
+        kwargs.setdefault("sep", "|")
+        return self._unmarshalList(self._receive(), **kwargs)
 
     def sendReceiveScalar(self, converter, *data):
         """Send data and receive a single item converted to the passed type."""
@@ -70,8 +71,8 @@ class Connection:
         self._send(*data)
         return self._parseVec3(converter, self._receive())
 
-    def _unmarshalList(self, dataStr):
-        return [] if not dataStr else dataStr.split("|")
+    def _unmarshalList(self, dataStr, **kwargs):
+        return [] if not dataStr else dataStr.split(**kwargs)
 
     def _parseScalar(self, converter, string):
         try:
