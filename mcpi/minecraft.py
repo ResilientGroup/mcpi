@@ -247,6 +247,10 @@ class Minecraft:
         """Check if block is passable (x,y,z) => Boolean"""
         return self.conn.sendReceive(b"world.isBlockPassable", *args) == "true"
 
+    def setPowered(self, *args):
+        """Set block powered (x,y,z,powered)"""
+        self.conn.sendReceive(b"world.setPowered", *args)
+
     def setSign(self, *args):
         """Set a sign (x,y,z,sign_type,direction,line1,line2,line3,line4)
         direction: 0-north, 1-east, 2-south 3-west
