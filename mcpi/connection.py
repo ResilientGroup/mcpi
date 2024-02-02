@@ -2,6 +2,7 @@ import socket
 import select
 import sys
 from .util import flatten_parameters_to_bytestring
+from .vec3 import Vec3
 
 """ @author: Aron Nieminen, Mojang AB"""
 
@@ -54,10 +55,37 @@ class Connection:
         self._send(*data)
         return self._receive()
 
-    def sendReceiveList(self, *data):
+    def sendReceiveList(self, *data, **kwargs):
         """Send data and receive a List of items."""
         self._send(*data)
-        return self._unmarshalList(self._receive())
+        kwargs.setdefault("sep", "|")
+        return self._unmarshalList(self._receive(), **kwargs)
 
-    def _unmarshalList(self, dataStr):
-        return [] if not dataStr else [item for item in dataStr.split("|")]
+    def sendReceiveScalar(self, converter, *data):
+        """Send data and receive a single item converted to the passed type."""
+        self._send(*data)
+        return self._parseScalar(converter, self._receive())
+
+    def sendReceiveVec3(self, converter, *data):
+        """Send data and receive a Vec3, with each coordinate converted to the passed type."""
+        self._send(*data)
+        return self._parseVec3(converter, self._receive())
+
+    def sendReceiveObjectList(self, constructor, *data, **kwargs):
+        """Send data and receive a List of objects created by passing the received attributes to constructor."""
+        return [constructor(*o.split(",", **kwargs)) for o in (self.sendReceiveList(*data))]
+
+    def _unmarshalList(self, dataStr, **kwargs):
+        return [] if not dataStr else dataStr.split(**kwargs)
+
+    def _parseScalar(self, converter, string):
+        try:
+            return converter(string)
+        except ValueError:
+            return None
+
+    def _parseVec3(self, converter, string):
+        try:
+            return Vec3(*list(map(converter, string.split(","))))
+        except ValueError:
+            return None

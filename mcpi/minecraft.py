@@ -2,12 +2,11 @@ import os
 import math
 
 from .connection import Connection
-from .vec3 import Vec3
 from .event import BlockEvent, ChatEvent, ProjectileEvent
 from .util import flatten
 
 
-def intFloor(*args):
+def _intFloor(*args):
     return [int(math.floor(x)) for x in flatten(args)]
 
 class CmdPositioner:
@@ -18,7 +17,7 @@ class CmdPositioner:
 
     def getPos(self, id):
         """Get entity position (entityId:int) => Vec3"""
-        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getPos", id))
+        return self.conn.sendReceiveVec3(float, self.pkg + b".getPos", id)
 
     def setPos(self, id, *args):
         """Set entity position (entityId:int, x,y,z)"""
@@ -26,11 +25,11 @@ class CmdPositioner:
 
     def getTilePos(self, id):
         """Get entity tile position (entityId:int) => Vec3"""
-        return self._parseVec3(int, self.conn.sendReceive(self.pkg + b".getTile", id))
+        return self.conn.sendReceiveVec3(int, self.pkg + b".getTile", id)
 
     def setTilePos(self, id, *args):
         """Set entity tile position (entityId:int) => Vec3"""
-        self.conn.sendReceive(self.pkg + b".setTile", id, intFloor(*args))
+        self.conn.sendReceive(self.pkg + b".setTile", id, _intFloor(*args))
 
     def setDirection(self, id, *args):
         """Set entity direction (entityId:int, x,y,z)"""
@@ -38,7 +37,7 @@ class CmdPositioner:
 
     def getDirection(self, id):
         """Get entity direction (entityId:int) => Vec3"""
-        return self._parseVec3(float, self.conn.sendReceive(self.pkg + b".getDirection", id))
+        return self.conn.sendReceiveVec3(float, self.pkg + b".getDirection", id)
 
     def setRotation(self, id, yaw):
         """Set entity rotation (entityId:int, yaw)"""
@@ -46,7 +45,7 @@ class CmdPositioner:
 
     def getRotation(self, id):
         """get entity rotation (entityId:int) => float"""
-        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getRotation", id))
+        return self.conn.sendReceiveScalar(float, self.pkg + b".getRotation", id)
 
     def setPitch(self, id, pitch):
         """Set entity pitch (entityId:int, pitch)"""
@@ -54,25 +53,11 @@ class CmdPositioner:
 
     def getPitch(self, id):
         """get entity pitch (entityId:int) => float"""
-        return self._parseScalar(float, self.conn.sendReceive(self.pkg + b".getPitch", id))
+        return self.conn.sendReceiveScalar(float, self.pkg + b".getPitch", id)
 
     def setting(self, setting, status):
         """Set a player setting (setting, status). keys: autojump"""
         self.conn.sendReceive(self.pkg + b".setting", setting, 1 if bool(status) else 0)
-
-    @staticmethod
-    def _parseScalar(converter, string):
-        try:
-            return converter(string)
-        except ValueError:
-            return None
-
-    @staticmethod
-    def _parseVec3(converter, string):
-        try:
-            return Vec3(*list(map(converter, string.split(","))))
-        except ValueError:
-            return None
 
 class CmdEntity(CmdPositioner):
     """Methods for entities"""
@@ -196,18 +181,15 @@ class CmdEvents:
 
     def pollBlockHits(self):
         """Only triggered by sword => [BlockEvent]"""
-        events = self.conn.sendReceiveList(b"events.block.hits")
-        return [BlockEvent.Hit(*e.split(",")) for e in events]
+        return self.conn.sendReceiveObjectList(BlockEvent.Hit, b"events.block.hits")
 
     def pollChatPosts(self):
         """Triggered by posts to chat => [ChatEvent]"""
-        events = self.conn.sendReceiveList(b"events.chat.posts")
-        return [ChatEvent.Post(*e.split(",", 2)) for e in events]
+        return self.conn.sendReceiveObjectList(ChatEvent.Post, b"events.chat.posts", maxsplit=2)
 
     def pollProjectileHits(self):
         """Only triggered by projectiles => [BlockEvent]"""
-        events = self.conn.sendReceiveList(b"events.projectile.hits")
-        return [ProjectileEvent.Hit(*e.split(",")) for e in events]
+        return self.conn.sendReceiveObjectList(ProjectileEvent.Hit, b"events.projectile.hits")
 
 
 class Minecraft:
@@ -223,17 +205,15 @@ class Minecraft:
 
     def getBlock(self, *args):
         """Get block (x,y,z) => id:int"""
-        return self.conn.sendReceive(b"world.getBlock", intFloor(args))
+        return self.conn.sendReceive(b"world.getBlock", _intFloor(args))
 
     def getBlockWithData(self, *args):
         """Get block with data (x,y,z) => Block"""
-        return self.conn.sendReceive(b"world.getBlockWithData", intFloor(args)).split(",")
+        return self.conn.sendReceiveList(b"world.getBlockWithData", _intFloor(args), sep=",")
 
     def getBlocks(self, *args):
         """Get a cuboid of blocks (x0,y0,z0,x1,y1,z1) => [id:int]"""
-        # s = self.conn.sendReceive(b"world.getBlocks", intFloor(args))
-        s = self.conn.sendReceive(b"world.getBlocks", *args)
-        return s.split(",")
+        return self.conn.sendReceiveList(b"world.getBlocks", *args, sep=",")
 
     def setBlock(self, *args):
         """Set block (x,y,z,id,[data])"""
@@ -263,10 +243,8 @@ class Minecraft:
 
     def getNearbyEntities(self, *args):
         """get nearby entities (x,y,z)"""
-        entities = []
-        for i in self.conn.sendReceiveList(b"world.getNearbyEntities", *args):
-            entities.append(Entity(self.conn, *i.split(":")))
-        return entities
+        return self.conn.sendReceiveObjectList(
+            lambda *attr: Entity(self.conn, *attr), b"world.getNearbyEntities", *args)
 
     def removeEntity(self, *args):
         """Spawn entity (x,y,z,id,[data])"""
@@ -274,11 +252,11 @@ class Minecraft:
 
     def getHeight(self, *args):
         """Get the height of the world (x,z) => int"""
-        return int(self.conn.sendReceive(b"world.getHeight", intFloor(args)))
+        return int(self.conn.sendReceive(b"world.getHeight", _intFloor(args)))
 
     def getPlayerEntityIds(self):
-        """Get the entity ids of the connected players => [id:int]"""
-        return self.conn.sendReceiveList(b"world.getPlayerIds")
+        """Get the entity ids of the connected players => [id]"""
+        return self.conn.sendReceiveObjectList(lambda name, entityId: entityId, b"world.getPlayerIds")
 
     def getPlayerEntityId(self, name):
         """Get the entity id of the named player => id"""
@@ -286,8 +264,7 @@ class Minecraft:
 
     def getPlayerNames(self):
         """Get the names of all currently connected players (or an empty List) => [str]"""
-        ids = self.conn.sendReceiveList(b"world.getPlayerIds")
-        return [] if not ids else [tuple.split(":")[0] for tuple in ids]
+        return self.conn.sendReceiveObjectList(lambda name, entityId: name, b"world.getPlayerIds")
 
     def saveCheckpoint(self):
         """Save a checkpoint that can be used for restoring the world"""
