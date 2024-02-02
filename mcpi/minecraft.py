@@ -4,7 +4,9 @@ import math
 from .connection import Connection
 from .event import BlockEvent, ChatEvent, ProjectileEvent
 from .util import flatten
+from enum import Enum
 
+PoweredState = Enum('PoweredState', ['ON', 'OFF', 'TOGGLE'])
 
 def _intFloor(*args):
     return [int(math.floor(x)) for x in flatten(args)]
@@ -226,6 +228,10 @@ class Minecraft:
     def isBlockPassable(self, *args):
         """Check if block is passable (x,y,z) => Boolean"""
         return self.conn.sendReceive(b"world.isBlockPassable", *args) == "true"
+
+    def setPowered(self, *args, state=PoweredState.TOGGLE):
+        """Set block powered (x,y,z,powered)"""
+        self.conn.sendReceive(b"world.setPowered", *args, state)
 
     def setSign(self, *args):
         """Set a sign (x,y,z,sign_type,direction,line1,line2,line3,line4)
