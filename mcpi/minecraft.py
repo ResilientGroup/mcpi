@@ -8,9 +8,6 @@ from enum import Enum
 
 PoweredState = Enum('PoweredState', ['ON', 'OFF', 'TOGGLE'])
 
-def _intFloor(*args):
-    return [int(math.floor(x)) for x in flatten(args)]
-
 class CmdPositioner:
     """Methods for setting and getting positions"""
     def __init__(self, connection, packagePrefix):
@@ -331,3 +328,7 @@ def mcpy(func):
 if __name__ == "__main__":
     mc = Minecraft.create()
     mc.postToChat("Hello, Minecraft!")
+
+
+def _intFloor(*args):
+    return [int(math.floor(x)) for x in flatten(args)]
