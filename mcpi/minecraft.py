@@ -197,7 +197,6 @@ class Minecraft:
         self.conn = connection
 
         self.camera = CmdCamera(connection)
-        self.entity = CmdEntity(connection)
         self.player = CmdPlayer(connection, playerName)
         self.events = CmdEvents(connection)
         self._playerName = playerName
