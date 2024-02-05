@@ -8,8 +8,10 @@ from enum import Enum
 
 PoweredState = Enum('PoweredState', ['ON', 'OFF', 'TOGGLE'])
 
+
 class CmdPositioner:
     """Methods for setting and getting positions"""
+
     def __init__(self, connection, packagePrefix):
         self.conn = connection
         self.pkg = packagePrefix
@@ -58,11 +60,13 @@ class CmdPositioner:
         """Set a player setting (setting, status). keys: autojump"""
         self.conn.sendReceive(self.pkg + b".setting", setting, 1 if bool(status) else 0)
 
+
 class CmdEntity(CmdPositioner):
     """Methods for entities"""
+
     def __init__(self, connection):
         CmdPositioner.__init__(self, connection, b"entity")
-    
+
     def getName(self, id):
         """Get the list name of the player with entity id => [name:str]
         
@@ -90,63 +94,88 @@ class Entity:
         self.p = CmdEntity(conn)
         self.type = typeName
         self.id = entity_uuid
+
     def getPos(self):
         return self.p.getPos(self.id)
+
     def setPos(self, *args):
         return self.p.setPos(self.id, args)
+
     def enableControl(self):
         return self.p.enableControl(self.id)
+
     def disableControl(self):
         return self.p.disableControl(self.id)
+
     def walkTo(self, *args):
         return self.p.walkTo(self.id, args)
+
     def getTilePos(self):
         return self.p.getTilePos(self.id)
+
     def setTilePos(self, *args):
         return self.p.setTilePos(self.id, args)
+
     def setDirection(self, *args):
         return self.p.setDirection(self.id, args)
+
     def getDirection(self):
         return self.p.getDirection(self.id)
+
     def setRotation(self, yaw):
         return self.p.setRotation(self.id, yaw)
+
     def getRotation(self):
         return self.p.getRotation(self.id)
+
     def setPitch(self, pitch):
         return self.p.setPitch(self.id, pitch)
+
     def getPitch(self):
         return self.p.getPitch(self.id)
+
     def remove(self):
         self.p.conn.sendReceive(b"entity.remove", self.id)
 
 
 class CmdPlayer(CmdPositioner):
     """Methods for the host (Raspberry Pi) player"""
+
     def __init__(self, connection, playerName):
-        CmdPositioner.__init__(self, connection,  b"player")
+        CmdPositioner.__init__(self, connection, b"player")
         self.conn = connection
         self.playerName = playerName
 
     def getPos(self):
         return CmdPositioner.getPos(self, self.playerName)
+
     def setPos(self, *args):
         return CmdPositioner.setPos(self, self.playerName, args)
+
     def getTilePos(self):
         return CmdPositioner.getTilePos(self, self.playerName)
+
     def setTilePos(self, *args):
         return CmdPositioner.setTilePos(self, self.playerName, args)
+
     def setDirection(self, *args):
         return CmdPositioner.setDirection(self, self.playerName, args)
+
     def getDirection(self):
         return CmdPositioner.getDirection(self, self.playerName)
+
     def setRotation(self, yaw):
-        return CmdPositioner.setRotation(self,self.playerName, yaw)
+        return CmdPositioner.setRotation(self, self.playerName, yaw)
+
     def getRotation(self):
         return CmdPositioner.getRotation(self, self.playerName)
+
     def setPitch(self, pitch):
         return CmdPositioner.setPitch(self, self.playerName, pitch)
+
     def getPitch(self):
         return CmdPositioner.getPitch(self, self.playerName)
+
 
 class CmdCamera:
     def __init__(self, connection):
@@ -171,6 +200,7 @@ class CmdCamera:
 
 class CmdEvents:
     """Events"""
+
     def __init__(self, connection):
         self.conn = connection
 
@@ -193,6 +223,7 @@ class CmdEvents:
 
 class Minecraft:
     """The main class to interact with a running instance of Minecraft Pi."""
+
     def __init__(self, connection, playerName):
         self.conn = connection
 
