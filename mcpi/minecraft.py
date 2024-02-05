@@ -56,10 +56,6 @@ class CmdPositioner:
         """get entity pitch (entityId:int) => float"""
         return self.conn.sendReceiveScalar(float, self.pkg + b".getPitch", id)
 
-    def setting(self, setting, status):
-        """Set a player setting (setting, status). keys: autojump"""
-        self.conn.sendReceive(self.pkg + b".setting", setting, 1 if bool(status) else 0)
-
 
 class CmdEntity(CmdPositioner):
     """Methods for entities"""
