@@ -62,8 +62,9 @@ class CmdPositioner:
 
 class Entity(CmdPositioner):
 
-    def __init__(self, connection, entityID):
+    def __init__(self, connection, typeName, entityID):
         CmdPositioner.__init__(self, connection, b"entity", entityID)
+        self.type = typeName
 
     def enableControl(self):
         """Enable control of entity (entityId:int)"""
