@@ -8,148 +8,86 @@ from enum import Enum
 
 PoweredState = Enum('PoweredState', ['ON', 'OFF', 'TOGGLE'])
 
-def _intFloor(*args):
-    return [int(math.floor(x)) for x in flatten(args)]
 
 class CmdPositioner:
-    """Methods for setting and getting positions"""
-    def __init__(self, connection, packagePrefix):
+    def __init__(self, connection, packagePrefix, entityID):
         self.conn = connection
         self.pkg = packagePrefix
+        self.entityID = entityID
 
-    def getPos(self, id):
-        """Get entity position (entityId:int) => Vec3"""
-        return self.conn.sendReceiveVec3(float, self.pkg + b".getPos", id)
-
-    def setPos(self, id, *args):
-        """Set entity position (entityId:int, x,y,z)"""
-        self.conn.sendReceive(self.pkg + b".setPos", id, args)
-
-    def getTilePos(self, id):
-        """Get entity tile position (entityId:int) => Vec3"""
-        return self.conn.sendReceiveVec3(int, self.pkg + b".getTile", id)
-
-    def setTilePos(self, id, *args):
-        """Set entity tile position (entityId:int) => Vec3"""
-        self.conn.sendReceive(self.pkg + b".setTile", id, _intFloor(*args))
-
-    def setDirection(self, id, *args):
-        """Set entity direction (entityId:int, x,y,z)"""
-        self.conn.sendReceive(self.pkg + b".setDirection", id, args)
-
-    def getDirection(self, id):
-        """Get entity direction (entityId:int) => Vec3"""
-        return self.conn.sendReceiveVec3(float, self.pkg + b".getDirection", id)
-
-    def setRotation(self, id, yaw):
-        """Set entity rotation (entityId:int, yaw)"""
-        self.conn.sendReceive(self.pkg + b".setRotation", id, yaw)
-
-    def getRotation(self, id):
-        """get entity rotation (entityId:int) => float"""
-        return self.conn.sendReceiveScalar(float, self.pkg + b".getRotation", id)
-
-    def setPitch(self, id, pitch):
-        """Set entity pitch (entityId:int, pitch)"""
-        self.conn.sendReceive(self.pkg + b".setPitch", id, pitch)
-
-    def getPitch(self, id):
-        """get entity pitch (entityId:int) => float"""
-        return self.conn.sendReceiveScalar(float, self.pkg + b".getPitch", id)
-
-    def setting(self, setting, status):
-        """Set a player setting (setting, status). keys: autojump"""
-        self.conn.sendReceive(self.pkg + b".setting", setting, 1 if bool(status) else 0)
-
-class CmdEntity(CmdPositioner):
-    """Methods for entities"""
-    def __init__(self, connection):
-        CmdPositioner.__init__(self, connection, b"entity")
-    
-    def getName(self, id):
-        """Get the list name of the player with entity id => [name:str]
-        
-        Also can be used to find name of entity if entity is not a player."""
+    def getName(self):
+        """Get entity name (entityId:int) => str"""
         return self.conn.sendReceive(b"entity.getName", id)
 
-    def enableControl(self, id):
+    def getPos(self):
+        """Get entity position (entityId:int) => Vec3"""
+        return self.conn.sendReceiveVec3(float, self.pkg + b".getPos", self.entityID)
+
+    def setPos(self, *args):
+        """Set entity position (entityId:int, x,y,z)"""
+        self.conn.sendReceive(self.pkg + b".setPos", self.entityID, args)
+
+    def getTilePos(self):
+        """Get entity tile position (entityId:int) => Vec3"""
+        return self.conn.sendReceiveVec3(int, self.pkg + b".getTile", self.entityID)
+
+    def setTilePos(self, *args):
+        """Set entity tile position (entityId:int) => Vec3"""
+        self.conn.sendReceive(self.pkg + b".setTile", self.entityID, _intFloor(*args))
+
+    def setDirection(self, *args):
+        """Set entity direction (entityId:int, x,y,z)"""
+        self.conn.sendReceive(self.pkg + b".setDirection", self.entityID, args)
+
+    def getDirection(self):
+        """Get entity direction (entityId:int) => Vec3"""
+        return self.conn.sendReceiveVec3(float, self.pkg + b".getDirection", self.entityID)
+
+    def setRotation(self, yaw):
+        """Set entity rotation (entityId:int, yaw)"""
+        self.conn.sendReceive(self.pkg + b".setRotation", self.entityID, yaw)
+
+    def getRotation(self):
+        """get entity rotation (entityId:int) => float"""
+        return self.conn.sendReceiveScalar(float, self.pkg + b".getRotation", self.entityID)
+
+    def setPitch(self, pitch):
+        """Set entity pitch (entityId:int, pitch)"""
+        self.conn.sendReceive(self.pkg + b".setPitch", self.entityID, pitch)
+
+    def getPitch(self):
+        """get entity pitch (entityId:int) => float"""
+        return self.conn.sendReceiveScalar(float, self.pkg + b".getPitch", self.entityID)
+
+
+class Entity(CmdPositioner):
+
+    def __init__(self, connection, typeName, entityID):
+        CmdPositioner.__init__(self, connection, b"entity", entityID)
+        self.type = typeName
+
+    def enableControl(self):
         """Enable control of entity (entityId:int)"""
-        self.conn.sendReceive(self.pkg + b".enableControl", id)
+        self.conn.sendReceive(self.pkg + b".enableControl", self.entityID)
 
-    def disableControl(self, id):
+    def disableControl(self):
         """Disable control of entity (entityId:int)"""
-        self.conn.sendReceive(self.pkg + b".disableControl", id)
+        self.conn.sendReceive(self.pkg + b".disableControl", self.entityID)
 
-    def walkTo(self, id, *args):
+    def walkTo(self, *args):
         """Move entity (entityId:int, x,y,z)"""
-        self.conn.sendReceive(self.pkg + b".walkTo", id, args)
+        self.conn.sendReceive(self.pkg + b".walkTo", self.entityID, args)
 
     def remove(self, id):
         self.conn.sendReceive(b"entity.remove", id)
 
 
-class Entity:
-    def __init__(self, conn, typeName, entity_uuid):
-        self.p = CmdEntity(conn)
-        self.type = typeName
-        self.id = entity_uuid
-    def getPos(self):
-        return self.p.getPos(self.id)
-    def setPos(self, *args):
-        return self.p.setPos(self.id, args)
-    def enableControl(self):
-        return self.p.enableControl(self.id)
-    def disableControl(self):
-        return self.p.disableControl(self.id)
-    def walkTo(self, *args):
-        return self.p.walkTo(self.id, args)
-    def getTilePos(self):
-        return self.p.getTilePos(self.id)
-    def setTilePos(self, *args):
-        return self.p.setTilePos(self.id, args)
-    def setDirection(self, *args):
-        return self.p.setDirection(self.id, args)
-    def getDirection(self):
-        return self.p.getDirection(self.id)
-    def setRotation(self, yaw):
-        return self.p.setRotation(self.id, yaw)
-    def getRotation(self):
-        return self.p.getRotation(self.id)
-    def setPitch(self, pitch):
-        return self.p.setPitch(self.id, pitch)
-    def getPitch(self):
-        return self.p.getPitch(self.id)
-    def remove(self):
-        self.p.conn.sendReceive(b"entity.remove", self.id)
+class Player(CmdPositioner):
 
-
-class CmdPlayer(CmdPositioner):
-    """Methods for the host (Raspberry Pi) player"""
     def __init__(self, connection, playerName):
-        CmdPositioner.__init__(self, connection,  b"player")
+        CmdPositioner.__init__(self, connection, b"player", playerName)
         self.conn = connection
-        self.playerName = playerName
 
-    def getPos(self):
-        return CmdPositioner.getPos(self, self.playerName)
-    def setPos(self, *args):
-        return CmdPositioner.setPos(self, self.playerName, args)
-    def getTilePos(self):
-        return CmdPositioner.getTilePos(self, self.playerName)
-    def setTilePos(self, *args):
-        return CmdPositioner.setTilePos(self, self.playerName, args)
-    def setDirection(self, *args):
-        return CmdPositioner.setDirection(self, self.playerName, args)
-    def getDirection(self):
-        return CmdPositioner.getDirection(self, self.playerName)
-    def setRotation(self, yaw):
-        return CmdPositioner.setRotation(self,self.playerName, yaw)
-    def getRotation(self):
-        return CmdPositioner.getRotation(self, self.playerName)
-    def setPitch(self, pitch):
-        return CmdPositioner.setPitch(self, self.playerName, pitch)
-    def getPitch(self):
-        return CmdPositioner.getPitch(self, self.playerName)
 
 class CmdCamera:
     def __init__(self, connection):
@@ -174,6 +112,7 @@ class CmdCamera:
 
 class CmdEvents:
     """Events"""
+
     def __init__(self, connection):
         self.conn = connection
 
@@ -196,12 +135,12 @@ class CmdEvents:
 
 class Minecraft:
     """The main class to interact with a running instance of Minecraft Pi."""
+
     def __init__(self, connection, playerName):
         self.conn = connection
 
         self.camera = CmdCamera(connection)
-        self.entity = CmdEntity(connection)
-        self.player = CmdPlayer(connection, playerName)
+        self.player = Player(connection, playerName)
         self.events = CmdEvents(connection)
         self._playerName = playerName
 
@@ -331,3 +270,7 @@ def mcpy(func):
 if __name__ == "__main__":
     mc = Minecraft.create()
     mc.postToChat("Hello, Minecraft!")
+
+
+def _intFloor(*args):
+    return [int(math.floor(x)) for x in flatten(args)]
