@@ -1,10 +1,8 @@
 import os
-import math
+from enum import Enum
 
 from .connection import Connection
 from .event import BlockEvent, ChatEvent, ProjectileEvent
-from .util import flatten
-from enum import Enum
 
 PoweredState = Enum('PoweredState', ['ON', 'OFF', 'TOGGLE'])
 
@@ -33,7 +31,7 @@ class CmdPositioner:
 
     def setTilePos(self, *args):
         """Set entity tile position (entityId:int) => Vec3"""
-        self.conn.sendReceive(self.pkg + b".setTile", self.entityID, _intFloor(*args))
+        self.conn.sendReceive(self.pkg + b".setTile", self.entityID, *args)
 
     def setDirection(self, *args):
         """Set entity direction (entityId:int, x,y,z)"""
@@ -146,11 +144,11 @@ class Minecraft:
 
     def getBlock(self, *args):
         """Get block (x,y,z) => id:int"""
-        return self.conn.sendReceive(b"world.getBlock", _intFloor(args))
+        return self.conn.sendReceive(b"world.getBlock", args)
 
     def getBlockWithData(self, *args):
         """Get block with data (x,y,z) => Block"""
-        return self.conn.sendReceiveList(b"world.getBlockWithData", _intFloor(args), sep=",")
+        return self.conn.sendReceiveList(b"world.getBlockWithData", args, sep=",")
 
     def getBlocks(self, *args):
         """Get a cuboid of blocks (x0,y0,z0,x1,y1,z1) => [id:int]"""
@@ -196,8 +194,8 @@ class Minecraft:
         return self.conn.sendReceive(b"world.removeEntity", *args)
 
     def getHeight(self, *args):
-        """Get the height of the world (x,z) => int"""
-        return int(self.conn.sendReceive(b"world.getHeight", _intFloor(args)))
+        """Get the height of the world (x,y,z) => int"""
+        return int(self.conn.sendReceive(b"world.getHeight", *args))
 
     def getPlayerEntityIds(self):
         """Get the entity ids of the connected players => [id]"""
@@ -270,7 +268,3 @@ def mcpy(func):
 if __name__ == "__main__":
     mc = Minecraft.create()
     mc.postToChat("Hello, Minecraft!")
-
-
-def _intFloor(*args):
-    return [int(math.floor(x)) for x in flatten(args)]
