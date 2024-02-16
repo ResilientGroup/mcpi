@@ -246,7 +246,7 @@ class Minecraft:
     playerName = property(getPlayerName)
 
     @staticmethod
-    def create(address="localhost", port=4711, playerName=[], debug=False):
+    def create(address="localhost", port=4711, playerName="", debug=False):
         if "JRP_API_HOST" in os.environ:
             address = os.environ["JRP_API_HOST"]
         if "JRP_API_PORT" in os.environ:
