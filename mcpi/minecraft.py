@@ -227,10 +227,11 @@ class Minecraft:
 
     def setPlayer(self, name):
         """Set the current player => bool"""
-        if self.conn.sendReceive(b"setPlayer", name):
+        if self.conn.sendReceive(b"setPlayer", name) == "true":
             self._playerName = name
             return True
         else:
+            self._playerName = None
             return False
 
     def getPlayerName(self):
@@ -244,7 +245,7 @@ class Minecraft:
     playerName = property(getPlayerName)
 
     @staticmethod
-    def create(address="localhost", port=4711, playerName="", debug=False):
+    def create(address="localhost", port=4711, playerName=None, debug=False):
         if "JRP_API_HOST" in os.environ:
             address = os.environ["JRP_API_HOST"]
         if "JRP_API_PORT" in os.environ:

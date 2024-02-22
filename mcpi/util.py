@@ -12,13 +12,11 @@ def flatten(l):
             yield e
 
 
-def flatten_parameters(l):
-    return ",".join(map(str, flatten(l)))
-
-
 def flatten_parameters_to_bytestring(l):
-    return b",".join(map(_misc_to_bytes, flatten(l)))
+    return b",".join(map(_misc_to_bytes, flatten(l + ("",))))
 
 
 def _misc_to_bytes(m):
+    if m is None:
+        return "".encode("utf8")
     return str(m).encode("utf8")
