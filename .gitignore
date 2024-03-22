@@ -1,33 +1,39 @@
-*.py[cdo]
-pythonhosted/
+# Compiled class file
+*.class
 
-# Editor detritus
-*.vim
-*.swp
-tags
-.vscode
+# Log file
+*.log
 
-# Packaging detritus
-*.egg
-*.egg-info
-dist
-build
-eggs
-parts
-bin
-var
-sdist
-develop-eggs
-.installed.cfg
+# BlueJ files
+*.ctxt
 
-# Installer logs
-pip-log.txt
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
 
-# Unit test / coverage reports
-coverage
-.coverage
-.tox
-.cache
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
 
-# Generated documentation
-docs/_build
+# All Windows thumbnails (Custom)
+*.db
+Thumbs.db
+
+# Mac junk
+.DS_Store
+
+# IDE configuration
+.project
+.classpath
+.metadata/
+.settings/
+.idea/
+.vscode/
+*.iml
+
+# Target folder (Custom)
+target/
+
+# Python compiled bytecode
+__pycache__
+*.pyc
+# Python virtual environments
+.venv/
