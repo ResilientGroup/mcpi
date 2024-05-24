@@ -86,6 +86,14 @@ class Player(CmdPositioner):
         CmdPositioner.__init__(self, connection, b"player", playerName)
         self.conn = connection
 
+    def performCommand(self, command: str) -> bool:
+        """Make the player perform the given command.
+
+        Returns:
+            True if the command was successful, otherwise False
+        """
+        return self.conn.sendReceiveBool(self.pkg + b".performCommand", command)
+
 
 class CmdCamera:
     def __init__(self, connection):
