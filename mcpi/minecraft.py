@@ -164,7 +164,7 @@ class Minecraft:
 
     def isBlockPassable(self, *args):
         """Check if block is passable (x,y,z) => Boolean"""
-        return self.conn.sendReceive(b"world.isBlockPassable", *args) == "true"
+        return self.conn.sendReceiveBool(b"world.isBlockPassable", *args)
 
     def setPowered(self, *args, state=PoweredState.TOGGLE):
         """Set block powered (x,y,z,powered)"""
@@ -227,12 +227,11 @@ class Minecraft:
 
     def setPlayer(self, name):
         """Set the current player => bool"""
-        if self.conn.sendReceive(b"setPlayer", name) == "true":
+        if success := self.conn.sendReceiveBool(b"setPlayer", name):
             self._playerName = name
-            return True
         else:
             self._playerName = None
-            return False
+        return success
 
     def getPlayerName(self):
         """Get the name of the previously set / currently attached player => str"""

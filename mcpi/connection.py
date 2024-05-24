@@ -66,6 +66,10 @@ class Connection:
         self._send(*data)
         return self._parseScalar(converter, self._receive())
 
+    def sendReceiveBool(self, *data):
+        """Send data and receive a boolean."""
+        return self.sendReceive(*data) == "true"
+
     def sendReceiveVec3(self, converter, *data):
         """Send data and receive a Vec3, with each coordinate converted to the passed type."""
         self._send(*data)
