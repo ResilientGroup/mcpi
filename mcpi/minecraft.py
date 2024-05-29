@@ -251,6 +251,14 @@ class Minecraft:
 
     playerName = property(getPlayerName)
 
+    def performCommand(self, command: str) -> bool:
+        """Execute the given command on the console.
+
+        Returns:
+            True if the command was successful, otherwise False
+        """
+        return self.conn.sendReceiveBool(b"console.performCommand", command)
+
     @staticmethod
     def create(address="localhost", port=4711, playerName=None, debug=False):
         if "JRP_API_HOST" in os.environ:
