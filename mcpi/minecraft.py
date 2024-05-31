@@ -86,6 +86,14 @@ class Player(CmdPositioner):
         CmdPositioner.__init__(self, connection, b"player", playerName)
         self.conn = connection
 
+    def performCommand(self, command: str) -> bool:
+        """Make the player perform the given command.
+
+        Returns:
+            True if the command was successful, otherwise False
+        """
+        return self.conn.sendReceiveBool(self.pkg + b".performCommand", command)
+
 
 class CmdCamera:
     def __init__(self, connection):
@@ -164,7 +172,7 @@ class Minecraft:
 
     def isBlockPassable(self, *args):
         """Check if block is passable (x,y,z) => Boolean"""
-        return self.conn.sendReceive(b"world.isBlockPassable", *args) == "true"
+        return self.conn.sendReceiveBool(b"world.isBlockPassable", *args)
 
     def setPowered(self, *args, state=PoweredState.TOGGLE):
         """Set block powered (x,y,z,powered)"""
@@ -227,12 +235,11 @@ class Minecraft:
 
     def setPlayer(self, name):
         """Set the current player => bool"""
-        if self.conn.sendReceive(b"setPlayer", name) == "true":
+        if success := self.conn.sendReceiveBool(b"setPlayer", name):
             self._playerName = name
-            return True
         else:
             self._playerName = None
-            return False
+        return success
 
     def getPlayerName(self):
         """Get the name of the previously set / currently attached player => str"""
@@ -243,6 +250,14 @@ class Minecraft:
             return None if p == "(none)" else p
 
     playerName = property(getPlayerName)
+
+    def performCommand(self, command: str) -> bool:
+        """Execute the given command on the console.
+
+        Returns:
+            True if the command was successful, otherwise False
+        """
+        return self.conn.sendReceiveBool(b"console.performCommand", command)
 
     @staticmethod
     def create(address="localhost", port=4711, playerName=None, debug=False):
