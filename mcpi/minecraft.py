@@ -15,7 +15,7 @@ class CmdPositioner:
 
     def getName(self):
         """Get entity name (entityId:int) => str"""
-        return self.conn.sendReceive(b"entity.getName", id)
+        return self.conn.sendReceive(b"entity.getName", self.entityID)
 
     def getPos(self):
         """Get entity position (entityId:int) => Vec3"""
@@ -76,8 +76,8 @@ class Entity(CmdPositioner):
         """Move entity (entityId:int, x,y,z)"""
         self.conn.sendReceive(self.pkg + b".walkTo", self.entityID, args)
 
-    def remove(self, id):
-        self.conn.sendReceive(b"entity.remove", id)
+    def remove(self):
+        self.conn.sendReceive(b"entity.remove", self.entityID)
 
 
 class Player(CmdPositioner):
