@@ -198,9 +198,14 @@ class Minecraft:
     @overload
     def getBlockWithData(self, x: int, y: int, z: int) -> Tuple[str, str]: ...
 
-    def getBlockWithData(self, *args: Union[Vec3, int]) -> Tuple[str, str]:
+    def getBlockWithData(self, *args: Union[Vec3, int]) -> tuple[str, dict[str, str]]:
         """Get block with data"""
-        return self.conn.sendReceiveList(b"world.getBlockWithData", args, sep=",")
+        data = self.conn.sendReceiveList(b"world.getBlockWithData", args, sep=",")
+        block_data = {}
+        for d in data[1:]:
+            key, value = d.split("=", 1)
+            block_data[key] = value
+        return data[0], block_data
 
     @overload
     def getBlocks(self, vec0: Vec3, vec1: Vec3) -> List[str]: ...
