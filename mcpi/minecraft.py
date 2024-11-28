@@ -202,9 +202,10 @@ class Minecraft:
         """Get block with data"""
         data = self.conn.sendReceiveList(b"world.getBlockWithData", args, sep=",")
         block_data = {}
-        for d in data[1:]:
-            key, value = d.split("=", 1)
-            block_data[key] = value
+        if len(data) > 1 and data[1]:
+            for d in data[1:]:
+                key, value = d.split("=", 1)
+                block_data[key] = value
         return data[0], block_data
 
     @overload
