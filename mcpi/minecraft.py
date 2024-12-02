@@ -62,7 +62,7 @@ class CmdPositioner:
         return self.conn.sendReceiveVec3(float, self.pkg + b".getDirection", self.entityID)
 
     def getHeldItem(self) -> str:
-        """Get entity direction"""
+        """Get entity held item"""
         return self.conn.sendReceiveList(self.pkg + b".getHeldItem", self.entityID, sep=",")
 
     def setRotation(self, yaw: float) -> None:
